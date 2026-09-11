@@ -9,7 +9,6 @@ import "swiper/css";
 import "swiper/css/pagination";
 // @ts-ignore
 import "swiper/css/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import axios from "axios";
 import { isCloudinaryUrl, getOptimizedImageUrl } from "@/lib/image";
@@ -122,27 +121,18 @@ export default function HeroSlider({
             return (
               <SwiperSlide key={slider._id}>
                 <div className="relative w-full overflow-hidden rounded-none">
-                  {/* Mobile Image View (Edge to Edge, No Rounded Corners) */}
-                  <img
-                    src={mobileImg}
-                    alt={slider.title || "Mobile Banner"}
-                    loading={idx === 0 ? "eager" : "lazy"}
-                    // @ts-ignore
-                    fetchPriority={idx === 0 ? "high" : "auto"}
-                    decoding="async"
-                    className="w-full h-auto block object-contain md:hidden rounded-none"
-                  />
-
-                  {/* Desktop & Tablet Banner View */}
-                  <img
-                    src={desktopImg}
-                    alt={slider.title || "Desktop Banner"}
-                    loading={idx === 0 ? "eager" : "lazy"}
-                    // @ts-ignore
-                    fetchPriority={idx === 0 ? "high" : "auto"}
-                    decoding="async"
-                    className="hidden md:block w-full h-[420px] md:h-[480px] lg:h-[560px] xl:h-[650px] 2xl:h-[760px] 3xl:h-[860px] object-cover rounded-none"
-                  />
+                  <picture>
+                    <source media="(min-width: 768px)" srcSet={desktopImg} />
+                    <img
+                      src={mobileImg}
+                      alt={slider.title || "Banner"}
+                      loading={idx === 0 ? "eager" : "lazy"}
+                      // @ts-ignore
+                      fetchPriority={idx === 0 ? "high" : "auto"}
+                      decoding="async"
+                      className="w-full h-auto block object-contain md:h-[480px] lg:h-[560px] xl:h-[650px] 2xl:h-[760px] 3xl:h-[860px] md:object-cover rounded-none"
+                    />
+                  </picture>
 
                   <Link
                     href={slider.buttonLink || "#"}
