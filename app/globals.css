@@ -1,0 +1,243 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Syne:ital,wght@1,600&display=swap');
+@import "tailwindcss";
+
+body {
+  font-family: var(--font-roboto), 'Roboto', system-ui, sans-serif;
+}
+
+.font-price-syne {
+  font-family: var(--font-syne), 'Syne', sans-serif !important;
+  font-weight: 600 !important;
+  font-style: italic !important;
+}
+
+/* Product Swiper Custom Styling */
+.product-swiper .swiper-button-next,
+.product-swiper .swiper-button-prev {
+  color: #000000 !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+  transition: all 0.2s ease !important;
+}
+
+.product-swiper .swiper-button-next:hover,
+.product-swiper .swiper-button-prev:hover {
+  background: #ffffff !important;
+  transform: scale(1.08) !important;
+}
+
+.product-swiper .swiper-button-next:after,
+.product-swiper .swiper-button-prev:after {
+  font-size: 16px !important;
+  font-weight: bold !important;
+}
+
+.product-swiper .swiper-pagination-bullet {
+  background: #9ca3af !important;
+  opacity: 0.6 !important;
+}
+
+.product-swiper .swiper-pagination-bullet-active {
+  background: #000000 !important;
+  opacity: 1 !important;
+}
+
+/* Product Title Animation */
+@keyframes titleEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-title-entrance {
+  animation: titleEntrance 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@theme {
+  --animate-slideInRight: slideInRight 1s ease-out;
+
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+}
+:root {
+  --background: #ffffff;
+  --foreground: #000000;
+  --primary: #2563eb;      /* Blue primary color */
+  --primary-dark: #1d4ed8; /* Blue darker for hover */
+  --primary-light: #3b82f6; /* Blue lighter */
+}
+
+body {
+  color: rgb(0 0 0);
+  background-color: rgb(255 255 255);
+}
+
+/* Base Button Default Styling */
+
+.rounded-full,
+.badge,
+.tag,
+.product-tag {
+  border-radius: 9999px !important;
+}
+
+/* Modals, Dialogs, Popups, and Drawers Rounded Corners */
+.rounded-3xl {
+  border-radius: 1.5rem !important;
+}
+
+.rounded-2xl {
+  border-radius: 1rem !important;
+}
+
+.rounded-xl {
+  border-radius: 0.75rem !important;
+}
+
+.rounded-lg {
+  border-radius: 0.5rem !important;
+}
+
+.btn {
+  @apply px-6 py-2 text-sm font-medium transition-colors duration-150 uppercase tracking-wide cursor-pointer;
+}
+
+.btn-primary {
+  @apply text-white cursor-pointer;
+  background-color: var(--primary-color, #2563eb);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-color-dark, #1d4ed8);
+}
+
+.btn-secondary {
+  @apply text-black border transition-colors duration-150;
+  background-color: var(--secondary-color, white);
+  border-color: var(--primary-color, #2563eb);
+}
+
+.btn-secondary:hover {
+  background-color: var(--primary-color, #2563eb);
+  color: white;
+}
+
+.btn-outline {
+  @apply bg-transparent text-white border-2 transition-colors duration-150;
+  border-color: var(--primary-color, #2563eb);
+  color: var(--primary-color, #2563eb);
+}
+
+.btn-outline:hover {
+  background-color: var(--primary-color, #2563eb);
+  color: white;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-marquee {
+  animation: marquee 45s linear infinite;
+  flex-shrink: 0;
+  padding-right: 2.5rem; /* Gap size */
+}
+
+.btn-danger {
+  @apply bg-white text-black border border-black hover:bg-black hover:text-white;
+}
+
+.input {
+  @apply w-full px-4 py-2 border border-gray-300 focus:outline-none focus:ring-1 focus:border-gray-300;
+}
+
+.input:focus {
+  border-color: var(--primary-color, #2563eb);
+  box-shadow: 0 0 0 1px var(--primary-color, #2563eb);
+}
+
+.card {
+  @apply bg-white shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-200;
+}
+
+.gradient-bg {
+  @apply bg-black;
+}
+
+/* ========================================================
+   DYNAMIC GLOBAL THEME PREFERENCES FROM ADMIN PANEL
+======================================================== */
+:root {
+  --primary-color: #000000;
+  --heading-color: #000000;
+  --text-color: #374151;
+  --btn-bg: #000000;
+  --btn-text: #ffffff;
+  --background-color: #ffffff;
+  --footer-bg: #ffffff;
+  --footer-text: #374151;
+}
+
+/* Overriding Body & Typography defaults */
+body {
+  color: var(--text-color);
+  background-color: var(--background-color);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--heading-color) !important;
+}
+
+/* Targeting standard hardcoded utility classes gently to map custom themes */
+.text-black, .text-gray-900 {
+  color: var(--heading-color) !important;
+}
+
+.text-gray-500, .text-gray-600 {
+  color: var(--text-color) !important;
+}
+
+.bg-black {
+  background-color: var(--btn-bg) !important;
+}
+
+button.bg-black, button[type="submit"], .btn-primary {
+  background-color: var(--btn-bg) !important;
+  color: var(--btn-text) !important;
+}
+
+/* Overriding explicit white backgrounds to match main theme */
+.bg-white {
+  background-color: var(--background-color) !important;
+}
+
+footer.bg-white {
+  background-color: var(--footer-bg) !important;
+}
+
+footer.bg-white, footer.bg-white * {
+  color: var(--footer-text) !important;
+}
+
