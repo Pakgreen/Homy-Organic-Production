@@ -18,8 +18,17 @@ export const pageview = () => {
 };
 
 // https://developers.facebook.com/docs/facebook-pixel/implementation/conversion-tracking#standard-events
-export const event = (name: string, options: Record<string, any> = {}) => {
+export const event = (
+  name: string,
+  options: Record<string, any> = {},
+  eventId?: string,
+) => {
   if (typeof window !== "undefined" && window.fbq) {
+    if (eventId) {
+      window.fbq("track", name, options, { eventID: eventId });
+      return;
+    }
+
     window.fbq("track", name, options);
   }
 };

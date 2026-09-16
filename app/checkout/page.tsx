@@ -391,15 +391,15 @@ export default function CheckoutPage() {
 
       toast.success("Order placed successfully!");
       setPlacedOrder(res.data);
-      setPlacedOrderId(res.data._id || res.data.id);
+      const orderId = String(res.data._id || res.data.id || "");
+      setPlacedOrderId(orderId || null);
 
-      // Track Meta Pixel Purchase Event using only standard Meta parameters
       try {
         trackPixelEvent("Purchase", {
           value: total,
           currency: "PKR",
           content_type: "product",
-        });
+        }, orderId || undefined);
       } catch (e) {
         // ignore tracking error
       }
