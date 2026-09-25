@@ -24,6 +24,7 @@ export interface IOrder extends Document {
   itemsPrice: number;
   shippingPrice: number;
   taxPrice: number;
+  discountAmount?: number;
   totalPrice: number;
   paymentReference: string;
   paymentProofUrl?: string;
@@ -90,6 +91,11 @@ const OrderSchema: Schema = new Schema(
       type: Number,
       required: true,
       default: 0.0,
+    },
+    discountAmount: {
+      type: Number,
+      default: 0.0,
+      min: 0,
     },
     totalPrice: {
       type: Number,

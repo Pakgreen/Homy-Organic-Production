@@ -7,6 +7,16 @@ export interface IProductSize {
   originalPrice?: number;
 }
 
+export interface IProductOffer {
+  label: string;
+  packQuantity: number;
+  price: number;
+  originalPrice?: number;
+  savingText?: string;
+  freeShipping?: boolean;
+  isPopular?: boolean;
+}
+
 export interface IProductIncludedItem {
   name: string;
   quantity: number;
@@ -23,6 +33,7 @@ export interface IProduct extends Document {
   images: string[];
   imageLabels?: string[];
   sizes?: IProductSize[];
+  offers?: IProductOffer[];
   brand?: string;
   ratings: number;
 
@@ -95,6 +106,20 @@ const ProductSchema: Schema = new Schema(
           name: { type: String, required: true },
           price: { type: Number, required: true },
           originalPrice: { type: Number },
+        },
+      ],
+      default: [],
+    },
+    offers: {
+      type: [
+        {
+          label: { type: String, required: true, trim: true },
+          packQuantity: { type: Number, required: true, min: 1 },
+          price: { type: Number, required: true, min: 0 },
+          originalPrice: { type: Number, min: 0 },
+          savingText: { type: String, default: "", trim: true },
+          freeShipping: { type: Boolean, default: false },
+          isPopular: { type: Boolean, default: false },
         },
       ],
       default: [],

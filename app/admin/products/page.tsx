@@ -65,6 +65,7 @@ export default function AdminProductsPage() {
     images: string[];
     imageLabels: string[];
     sizes: Array<{ name: string; price: number | ""; originalPrice: number | "" }>;
+    offers: Array<{ label: string; packQuantity: number | ""; price: number | ""; originalPrice: number | ""; savingText: string; freeShipping: boolean; isPopular: boolean }>;
     isFeatured: boolean;
     isBestSeller: boolean;
     isDisabled: boolean;
@@ -91,6 +92,7 @@ export default function AdminProductsPage() {
     images: [],
     imageLabels: [],
     sizes: [],
+    offers: [],
     isFeatured: false,
     isBestSeller: false,
     isDisabled: false,
@@ -167,6 +169,25 @@ export default function AdminProductsPage() {
     });
   };
 
+  const handleAddOfferRow = () => {
+    setFormData((prev) => ({
+      ...prev,
+      offers: [...(prev.offers || []), { label: "", packQuantity: "", price: "", originalPrice: "", savingText: "", freeShipping: false, isPopular: false }],
+    }));
+  };
+
+  const handleOfferChange = (index: number, field: string, value: any) => {
+    setFormData((prev) => {
+      const offers = [...(prev.offers || [])];
+      offers[index] = { ...offers[index], [field]: value };
+      return { ...prev, offers };
+    });
+  };
+
+  const handleRemoveOfferRow = (index: number) => {
+    setFormData((prev) => ({ ...prev, offers: (prev.offers || []).filter((_, i) => i !== index) }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const priceNumber = Number(formData.price);
@@ -203,6 +224,17 @@ export default function AdminProductsPage() {
             s.originalPrice !== "" && Number(s.originalPrice) > 0
               ? Number(s.originalPrice)
               : undefined,
+        })),
+      offers: (formData.offers || [])
+        .filter((offer) => Number(offer.packQuantity) > 1 && Number(offer.price) > 0)
+        .map((offer) => ({
+          label: offer.label.trim() || `${Number(offer.packQuantity)} packs`,
+          packQuantity: Number(offer.packQuantity),
+          price: Number(offer.price),
+          originalPrice: (originalPriceNumber || priceNumber) * Number(offer.packQuantity),
+          savingText: offer.savingText.trim(),
+          freeShipping: offer.freeShipping,
+          isPopular: offer.isPopular,
         })),
       imageLabels: formData.images.map((_, index) => {
         const label = formData.imageLabels[index];
@@ -333,6 +365,17 @@ export default function AdminProductsPage() {
             originalPrice: typeof s.originalPrice === "number" ? s.originalPrice : "",
           }))
         : [],
+      offers: Array.isArray(product.offers)
+        ? product.offers.map((offer: any) => ({
+            label: offer.label || "",
+            packQuantity: typeof offer.packQuantity === "number" ? offer.packQuantity : "",
+            price: typeof offer.price === "number" ? offer.price : "",
+            originalPrice: typeof offer.originalPrice === "number" ? offer.originalPrice : "",
+            savingText: offer.savingText || "",
+            freeShipping: !!offer.freeShipping,
+            isPopular: !!offer.isPopular,
+          }))
+        : [],
       isFeatured: product.isFeatured || false,
       isBestSeller: product.isBestSeller || false,
       isDisabled: product.isDisabled || false,
@@ -375,6 +418,7 @@ export default function AdminProductsPage() {
       images: [],
       imageLabels: [],
       sizes: [],
+      offers: [],
       isFeatured: false,
       isBestSeller: false,
       isDisabled: false,
@@ -1252,6 +1296,28 @@ export default function AdminProductsPage() {
                     ))}
                   </div>
                 )}
+              </div>
+
+              <div className="border border-emerald-200/80 bg-emerald-50/40 p-4 sm:p-5 rounded-2xl space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-900">Pack Offers (Optional)</h4>
+                    <p className="text-[11px] text-gray-500 font-medium mt-0.5">Add only discounted packs. The 1-pack price comes from the main price above.</p>
+                  </div>
+                  <button type="button" onClick={handleAddOfferRow} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold">
+                    <FiPlus size={14} /> Add Offer
+                  </button>
+                </div>
+                {formData.offers.map((offer, idx) => (
+                  <div key={idx} className="grid grid-cols-2 md:grid-cols-12 gap-2.5 bg-white p-3 rounded-xl border border-emerald-200 items-center">
+                    <input className="px-3 py-2 border border-gray-200 rounded-lg text-xs" type="number" min="2" placeholder="Packs (2 or 3)" value={offer.packQuantity} onChange={(e) => handleOfferChange(idx, "packQuantity", e.target.value === "" ? "" : Number(e.target.value))} />
+                    <input className="md:col-span-3 px-3 py-2 border border-gray-200 rounded-lg text-xs" type="number" min="0" placeholder="Offer price" value={offer.price} onChange={(e) => handleOfferChange(idx, "price", e.target.value === "" ? "" : Number(e.target.value))} />
+                    <span className="md:col-span-3 px-3 py-2 border border-gray-100 rounded-lg text-xs text-gray-500 bg-gray-50">Original: {formData.price !== "" && offer.packQuantity !== "" ? formatPrice((Number(formData.originalPrice) || Number(formData.price)) * Number(offer.packQuantity)) : "Auto calculated"}</span>
+                    <label className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-700"><input type="checkbox" checked={offer.freeShipping} onChange={(e) => handleOfferChange(idx, "freeShipping", e.target.checked)} /> Free shipping</label>
+                    <label className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-700"><input type="checkbox" checked={offer.isPopular} onChange={(e) => handleOfferChange(idx, "isPopular", e.target.checked)} /> Popular</label>
+                    <button type="button" onClick={() => handleRemoveOfferRow(idx)} className="text-gray-400 hover:text-rose-600 p-1 justify-self-end" title="Remove Offer"><FiX size={16} /></button>
+                  </div>
+                ))}
               </div>
 
               {/* Standard Organic Highlights */}

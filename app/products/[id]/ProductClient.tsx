@@ -17,6 +17,8 @@ import {
   FiEye,
   FiShoppingBag,
   FiTrendingUp,
+  FiChevronLeft,
+  FiChevronRight,
 } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 import { useCartStore } from "@/store/cartStore";
@@ -75,6 +77,9 @@ export default function ProductClient({
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState<any>(
     initialProduct?.sizes?.[0] || null,
+  );
+  const [selectedOffer, setSelectedOffer] = useState<any>(
+    initialProduct?.offers?.[0] || null,
   );
   const [isMainImageLoaded, setIsMainImageLoaded] = useState(false);
   const [sharePopup, setSharePopup] = useState<string | null>(null);
@@ -246,6 +251,7 @@ export default function ProductClient({
     } else {
       setSelectedSize(null);
     }
+    setSelectedOffer(Array.isArray(product?.offers) && product.offers.length > 0 ? product.offers[0] : null);
   }, [product?._id]);
 
   useEffect(() => {
@@ -413,9 +419,18 @@ export default function ProductClient({
 
   const heroImage = getOptimizedImageUrl(rawHeroImage, 800, "auto");
 
-  const currentPrice = selectedSize?.price ?? product?.price ?? 0;
+  const currentPrice = selectedOffer?.price ?? selectedSize?.price ?? product?.price ?? 0;
   const currentOriginalPrice =
-    selectedSize?.originalPrice ?? product?.originalPrice;
+    selectedOffer?.originalPrice ?? selectedSize?.originalPrice ?? product?.originalPrice;
+  const packOffers = [
+    {
+      label: "1 pack",
+      packQuantity: 1,
+      price: product?.price ?? 0,
+      originalPrice: product?.originalPrice,
+    },
+    ...(Array.isArray(product?.offers) ? product.offers : []),
+  ];
 
   const handleSelectImage = (index: number) => {
     if (index < 0 || index >= productImageVariants.length) return;
@@ -442,7 +457,7 @@ export default function ProductClient({
         productImageVariants[selectedImage]?.url ||
         productImageVariants[0]?.url ||
         "",
-      size: selectedSize?.name,
+      size: selectedOffer?.label || selectedSize?.name,
     });
     toast.success(`Added ${quantity} item(s) to cart!`);
   };
@@ -461,7 +476,7 @@ export default function ProductClient({
         productImageVariants[selectedImage]?.url ||
         productImageVariants[0]?.url ||
         "",
-      size: selectedSize?.name,
+      size: selectedOffer?.label || selectedSize?.name,
     });
     router.push("/checkout");
   };
@@ -475,8 +490,8 @@ export default function ProductClient({
       /[^0-9]/g,
       "",
     );
-    const priceToUse = selectedSize?.price
-      ? selectedSize.price
+    const priceToUse = selectedOffer?.price || selectedSize?.price
+      ? selectedOffer?.price || selectedSize.price
       : typeof product?.newPrice === "number"
         ? product.newPrice
         : product?.price || 0;
@@ -488,8 +503,8 @@ export default function ProductClient({
 
     let message = `Hello Homy Organic! 👋\n\nI want to place an order for this product:\n\n`;
     message += `🛍️ *Product:* ${product?.name || "Product"}\n`;
-    if (selectedSize?.name) {
-      message += `🏷️ *Size / Option:* ${selectedSize.name}\n`;
+    if (selectedOffer?.label || selectedSize?.name) {
+      message += `🏷️ *Size / Option:* ${selectedOffer?.label || selectedSize.name}\n`;
     }
     message += `💰 *Unit Price:* ${formatPrice(priceToUse)}\n`;
     message += `🔢 *Quantity:* ${quantity}\n`;
@@ -668,6 +683,16 @@ export default function ProductClient({
     );
   };
 
+  useEffect(() => {
+    if (productImageVariants.length <= 1) return;
+    const sliderTimer = setInterval(() => {
+      setSelectedImage((prev) =>
+        prev === productImageVariants.length - 1 ? 0 : prev + 1,
+      );
+    }, 4500);
+    return () => clearInterval(sliderTimer);
+  }, [productImageVariants.length]);
+
   return (
     <div className="min-h-screen py-6 sm:py-12 bg-white text-gray-900">
       {/* Google Rich Snippets SEO Schema */}
@@ -692,6 +717,27 @@ export default function ProductClient({
                   fetchPriority="high"
                   className="w-full h-auto max-h-[440px] sm:max-h-[520px] md:max-h-[580px] object-contain rounded-2xl transition-transform duration-300 group-hover:scale-105"
                 />
+              )}
+
+              {productImageVariants.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handlePrevImage}
+                    aria-label="Previous product image"
+                    className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow-md opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white"
+                  >
+                    <FiChevronLeft size={20} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNextImage}
+                    aria-label="Next product image"
+                    className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow-md opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white"
+                  >
+                    <FiChevronRight size={20} />
+                  </button>
+                </>
               )}
 
               {/* Center Red Outline Out of Stock Badge (Sharp - No rounded corners) */}
@@ -875,6 +921,34 @@ export default function ProductClient({
                       </div>
                     ))}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {packOffers.length > 1 && (
+              <div className="pt-2 space-y-3">
+                <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900">Buy more, save more</h2>
+                <div className="space-y-2">
+                  {packOffers.map((offer: any, idx: number) => {
+                    const isSelected = idx === 0
+                      ? !selectedOffer
+                      : selectedOffer?.label === offer.label;
+                    const offerOriginalPrice = idx === 0
+                      ? offer.originalPrice
+                      : offer.originalPrice ?? ((product?.originalPrice ?? product?.price ?? 0) * (offer.packQuantity || idx + 1));
+                    return (
+                      <button key={`${offer.label}-${idx}`} type="button" onClick={() => setSelectedOffer(idx === 0 ? null : offer)} className={`relative w-full text-left border-2 rounded-xl px-4 py-3 transition-all ${isSelected ? "border-[#687b63] bg-[#f0eee8]" : "border-gray-300 bg-white hover:border-gray-500"}`}>
+                        {offer.isPopular && <span className="absolute -top-3 right-4 bg-[#B9853A] text-white text-xs font-extrabold px-3 py-1 rounded-md">Most popular</span>}
+                        <div className="flex items-center gap-3">
+                          <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${isSelected ? "border-[#687b63]" : "border-gray-300"}`}>{isSelected && <span className="w-2.5 h-2.5 rounded-full bg-[#687b63]" />}</span>
+                          <span className="font-extrabold text-lg flex-1">{offer.label}</span>
+                          <span className="font-extrabold text-lg text-[#687b63]">{formatPrice(offer.price)}</span>
+                        </div>
+                        {(offer.freeShipping || offer.savingText) && <div className="ml-8 mt-2 text-sm text-gray-600">{offer.freeShipping && <span className="inline-block bg-[#adb5a9] text-gray-800 px-3 py-1 rounded-full mr-2">Free shipping</span>}{offer.savingText}</div>}
+                        {offerOriginalPrice > 0 && <span className="ml-8 text-sm text-gray-400 line-through">{formatPrice(offerOriginalPrice)}</span>}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}

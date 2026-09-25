@@ -248,7 +248,14 @@ export async function POST(req: NextRequest) {
       : 0;
 
     const safeTax = Number.isFinite(taxPrice) && taxPrice >= 0 ? taxPrice : 0;
-    const computedTotal = computedItemsPrice + safeShipping + safeTax;
+    const prepaidDiscountEnabled = siteSettings.prepaidDiscountEnabled === true;
+    const prepaidDiscountAmount = paymentMethod === "Prepaid" && prepaidDiscountEnabled
+      ? Math.min(Number(siteSettings.prepaidDiscountAmount) || 0, computedItemsPrice + safeShipping + safeTax)
+      : 0;
+    const computedTotal = Math.max(
+      0,
+      computedItemsPrice + safeShipping + safeTax - prepaidDiscountAmount,
+    );
 
     const validUserId =
       session?.user?.id && typeof session.user.id === "string" && session.user.id.trim()
@@ -271,6 +278,7 @@ export async function POST(req: NextRequest) {
       itemsPrice: computedItemsPrice,
       shippingPrice: safeShipping,
       taxPrice: safeTax,
+      discountAmount: prepaidDiscountAmount,
       totalPrice: computedTotal,
       paymentReference:
         paymentMethod === "Cash on Delivery" ? "COD" : paymentReference,
@@ -283,7 +291,7 @@ export async function POST(req: NextRequest) {
         customerName: shippingAddress?.fullName || session?.user?.name,
         orderId: order._id.toString(),
         orderItems,
-        totalPrice,
+        totalPrice: computedTotal,
         shippingAddress,
         paymentMethod,
       }),

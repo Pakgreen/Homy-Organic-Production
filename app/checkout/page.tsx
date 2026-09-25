@@ -33,6 +33,7 @@ export default function CheckoutPage() {
     enabled: boolean;
     amount: number;
   }>({ enabled: false, amount: 0 });
+  const [prepaidDiscountData, setPrepaidDiscountData] = useState({ enabled: false, amount: 0 });
   const [selectedCountryCode, setSelectedCountryCode] = useState("+92");
   const [saveDetails, setSaveDetails] = useState(true);
 
@@ -146,6 +147,12 @@ export default function CheckoutPage() {
             setPaymentMethod("Cash on Delivery");
           }
         }
+        if (res.data?.prepaidDiscountEnabled) {
+          setPrepaidDiscountData({
+            enabled: true,
+            amount: Number(res.data.prepaidDiscountAmount) || 0,
+          });
+        }
       } catch (error) {
         console.error("Site settings fetch error:", error);
       }
@@ -193,7 +200,11 @@ export default function CheckoutPage() {
 
   const subtotal = getTotalPrice();
   const deliveryPrice = deliveryData.enabled ? deliveryData.amount : 0;
-  const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+  const couponDiscountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+  const prepaidDiscountAmount = paymentMethod === "Prepaid" && prepaidDiscountData.enabled
+    ? Math.min(prepaidDiscountData.amount, subtotal + deliveryPrice)
+    : 0;
+  const discountAmount = couponDiscountAmount + prepaidDiscountAmount;
   const total = Math.max(0, subtotal + deliveryPrice - discountAmount);
 
   // Apply Coupon Code Handler
@@ -984,7 +995,14 @@ export default function CheckoutPage() {
             {appliedCoupon && (
               <div className="flex justify-between text-emerald-700 font-semibold">
                 <span>Discount Applied</span>
-                <span>- PKR {discountAmount.toLocaleString()}</span>
+                <span>- PKR {couponDiscountAmount.toLocaleString()}</span>
+              </div>
+            )}
+
+            {prepaidDiscountAmount > 0 && (
+              <div className="flex justify-between text-emerald-700 font-semibold">
+                <span>Prepaid Discount</span>
+                <span>- PKR {prepaidDiscountAmount.toLocaleString()}</span>
               </div>
             )}
 

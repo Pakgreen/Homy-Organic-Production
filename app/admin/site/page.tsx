@@ -24,6 +24,8 @@ export default function SiteSettingsPage() {
     allowedPaymentMethods: "both" | "cod" | "prepaid";
     deliveryChargesEnabled: boolean;
     deliveryChargeAmount: number | "";
+    prepaidDiscountEnabled: boolean;
+    prepaidDiscountAmount: number | "";
   }>({
     logo: "",
     favicon: "",
@@ -38,6 +40,8 @@ export default function SiteSettingsPage() {
     allowedPaymentMethods: "both",
     deliveryChargesEnabled: false,
     deliveryChargeAmount: "",
+    prepaidDiscountEnabled: false,
+    prepaidDiscountAmount: "",
   });
 
   useEffect(() => {
@@ -60,6 +64,8 @@ export default function SiteSettingsPage() {
           allowedPaymentMethods: data.allowedPaymentMethods || "both",
           deliveryChargesEnabled: data.deliveryChargesEnabled || false,
           deliveryChargeAmount: data.deliveryChargeAmount || "",
+          prepaidDiscountEnabled: data.prepaidDiscountEnabled || false,
+          prepaidDiscountAmount: data.prepaidDiscountAmount || "",
         });
       } catch (error) {
         toast.error("Failed to load site settings");
@@ -92,6 +98,8 @@ export default function SiteSettingsPage() {
         ...formData,
         deliveryChargeAmount:
           formData.deliveryChargeAmount === "" ? 0 : Number(formData.deliveryChargeAmount),
+        prepaidDiscountAmount:
+          formData.prepaidDiscountAmount === "" ? 0 : Number(formData.prepaidDiscountAmount),
       };
       await axios.put("/api/settings/site", payload);
       toast.success("Site settings updated successfully");
@@ -409,6 +417,38 @@ export default function SiteSettingsPage() {
               These details will be displayed to customers selecting prepaid payment at checkout.
             </p>
           </div>
+
+          <div className="flex items-center justify-between bg-amber-50/60 rounded-xl px-4 py-3.5 border border-amber-100">
+            <div>
+              <p className="text-sm font-semibold text-gray-800">Prepaid Payment Discount</p>
+              <p className="text-xs text-gray-400 mt-0.5">Apply a fixed discount when customers choose prepaid.</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.prepaidDiscountEnabled}
+                onChange={(e) => setFormData((prev) => ({ ...prev, prepaidDiscountEnabled: e.target.checked }))}
+                className="sr-only peer"
+              />
+              <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#B9853A]"></div>
+            </label>
+          </div>
+
+          {formData.prepaidDiscountEnabled && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">
+                Prepaid Discount Amount (PKR)
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={formData.prepaidDiscountAmount}
+                onChange={(e) => setFormData((prev) => ({ ...prev, prepaidDiscountAmount: e.target.value === "" ? "" : Number(e.target.value) }))}
+                className="w-full max-w-xs px-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:border-[#B9853A] focus:bg-white transition-all"
+                placeholder="e.g. 100"
+              />
+            </div>
+          )}
         </div>
 
         {/* Section 4: Shipping & Delivery */}
