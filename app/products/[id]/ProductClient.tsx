@@ -78,9 +78,7 @@ export default function ProductClient({
   const [selectedSize, setSelectedSize] = useState<any>(
     initialProduct?.sizes?.[0] || null,
   );
-  const [selectedOffer, setSelectedOffer] = useState<any>(
-    initialProduct?.offers?.[0] || null,
-  );
+  const [selectedOffer, setSelectedOffer] = useState<any>(null);
   const [isMainImageLoaded, setIsMainImageLoaded] = useState(false);
   const [sharePopup, setSharePopup] = useState<string | null>(null);
   const [whatsappNumber, setWhatsappNumber] = useState<string>("923023735860");
@@ -251,7 +249,7 @@ export default function ProductClient({
     } else {
       setSelectedSize(null);
     }
-    setSelectedOffer(Array.isArray(product?.offers) && product.offers.length > 0 ? product.offers[0] : null);
+    setSelectedOffer(null);
   }, [product?._id]);
 
   useEffect(() => {
@@ -930,14 +928,14 @@ export default function ProductClient({
                 <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900">Buy more, save more</h2>
                 <div className="space-y-2">
                   {packOffers.map((offer: any, idx: number) => {
-                    const isSelected = idx === 0
+                    const isSelected = offer.packQuantity === 1
                       ? !selectedOffer
-                      : selectedOffer?.label === offer.label;
+                      : selectedOffer?.packQuantity === offer.packQuantity;
                     const offerOriginalPrice = idx === 0
                       ? offer.originalPrice
                       : offer.originalPrice ?? ((product?.originalPrice ?? product?.price ?? 0) * (offer.packQuantity || idx + 1));
                     return (
-                      <button key={`${offer.label}-${idx}`} type="button" onClick={() => setSelectedOffer(idx === 0 ? null : offer)} className={`relative w-full text-left border-2 rounded-xl px-4 py-3 transition-all ${isSelected ? "border-[#687b63] bg-[#f0eee8]" : "border-gray-300 bg-white hover:border-gray-500"}`}>
+                      <button key={`${offer.packQuantity}-${idx}`} type="button" onClick={() => setSelectedOffer(offer.packQuantity === 1 ? null : offer)} className={`relative w-full text-left border-2 rounded-xl px-4 py-3 transition-all ${isSelected ? "border-[#687b63] bg-[#f0eee8]" : "border-gray-300 bg-white hover:border-gray-500"}`}>
                         {offer.isPopular && <span className="absolute -top-3 right-4 bg-[#B9853A] text-white text-xs font-extrabold px-3 py-1 rounded-md">Most popular</span>}
                         <div className="flex items-center gap-3">
                           <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${isSelected ? "border-[#687b63]" : "border-gray-300"}`}>{isSelected && <span className="w-2.5 h-2.5 rounded-full bg-[#687b63]" />}</span>
