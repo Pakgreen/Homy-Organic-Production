@@ -53,6 +53,7 @@ export async function GET(req: NextRequest) {
     const bestSeller = searchParams.get("bestSeller");
     const valuePack = searchParams.get("valuePack");
     const regularOnly = searchParams.get("regularOnly") === "true";
+    const availableOnly = searchParams.get("available") === "true";
     const includeDisabled = searchParams.get("includeDisabled") === "true";
     const sort = searchParams.get("sort") || "-createdAt";
     const page = parseInt(searchParams.get("page") || "1");
@@ -62,6 +63,19 @@ export async function GET(req: NextRequest) {
 
     if (!includeDisabled) {
       query.isDisabled = { $ne: true };
+    }
+
+    if (availableOnly) {
+      query.inStock = { $ne: false };
+      query.$and = [
+        ...(query.$and || []),
+        {
+          $or: [
+            { stock: { $gt: 0 } },
+            { stock: { $exists: false } },
+          ],
+        },
+      ];
     }
 
     if (valuePack === "true") {
@@ -100,11 +114,13 @@ export async function GET(req: NextRequest) {
     }
 
     if (search) {
-      query.$or = [
+      const searchConditions = [
         { name: { $regex: search, $options: "i" } },
         { description: { $regex: search, $options: "i" } },
         { brand: { $regex: search, $options: "i" } },
       ];
+      query.$and = query.$and || [];
+      query.$and.push({ $or: searchConditions });
     }
 
     if (featured === "true") {
