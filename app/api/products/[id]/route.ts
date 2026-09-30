@@ -191,6 +191,17 @@ export async function PUT(
           : [];
     }
 
+    if (data.videos !== undefined) {
+      data.videos = Array.isArray(data.videos)
+        ? data.videos.filter(
+            (url: unknown): url is string =>
+              typeof url === "string" && url.trim().length > 0,
+          )
+        : typeof data.videos === "string" && data.videos.trim().length > 0
+          ? [data.videos.trim()]
+          : [];
+    }
+
     const normalizeStringArray = (input: any) => {
       if (Array.isArray(input)) {
         return input.map((item) => (typeof item === "string" ? item.trim() : "")).filter(Boolean);

@@ -13,6 +13,7 @@ export interface IProductOffer {
   price: number;
   originalPrice?: number;
   savingText?: string;
+  gift?: string;
   freeShipping?: boolean;
   isPopular?: boolean;
 }
@@ -32,6 +33,7 @@ export interface IProduct extends Document {
   category: mongoose.Types.ObjectId;
   images: string[];
   imageLabels?: string[];
+  videos?: string[];
   sizes?: IProductSize[];
   offers?: IProductOffer[];
   brand?: string;
@@ -100,6 +102,10 @@ const ProductSchema: Schema = new Schema(
       type: [String],
       default: [],
     },
+    videos: {
+      type: [String],
+      default: [],
+    },
     sizes: {
       type: [
         {
@@ -118,6 +124,7 @@ const ProductSchema: Schema = new Schema(
           price: { type: Number, required: true, min: 0 },
           originalPrice: { type: Number, min: 0 },
           savingText: { type: String, default: "", trim: true },
+          gift: { type: String, default: "", trim: true },
           freeShipping: { type: Boolean, default: false },
           isPopular: { type: Boolean, default: false },
         },

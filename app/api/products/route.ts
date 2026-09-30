@@ -260,6 +260,12 @@ export async function POST(req: NextRequest) {
       slug,
       images: normalizedImages,
       imageLabels: Array.isArray(data.imageLabels) ? data.imageLabels : [],
+      videos: Array.isArray(data.videos)
+        ? data.videos.filter(
+            (url: unknown): url is string =>
+              typeof url === "string" && url.trim().length > 0,
+          )
+        : [],
     });
 
     clearHomeProductsCache();
@@ -276,6 +282,12 @@ export async function POST(req: NextRequest) {
           slug: fallbackSlug,
           images: normalizedImages,
           imageLabels: Array.isArray(data.imageLabels) ? data.imageLabels : [],
+          videos: Array.isArray(data.videos)
+            ? data.videos.filter(
+                (url: unknown): url is string =>
+                  typeof url === "string" && url.trim().length > 0,
+              )
+            : [],
         });
         return NextResponse.json(withPriceAliases(product), { status: 201 });
       } catch (fallbackError) {

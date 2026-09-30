@@ -64,8 +64,9 @@ export default function AdminProductsPage() {
     ratings: number | "";
     images: string[];
     imageLabels: string[];
+    videos: string[];
     sizes: Array<{ name: string; price: number | ""; originalPrice: number | "" }>;
-    offers: Array<{ label: string; packQuantity: number | ""; price: number | ""; originalPrice: number | ""; savingText: string; freeShipping: boolean; isPopular: boolean }>;
+    offers: Array<{ label: string; packQuantity: number | ""; price: number | ""; originalPrice: number | ""; savingText: string; gift: string; freeShipping: boolean; isPopular: boolean }>;
     isFeatured: boolean;
     isBestSeller: boolean;
     isDisabled: boolean;
@@ -91,6 +92,7 @@ export default function AdminProductsPage() {
     ratings: "",
     images: [],
     imageLabels: [],
+    videos: [],
     sizes: [],
     offers: [],
     isFeatured: false,
@@ -172,7 +174,7 @@ export default function AdminProductsPage() {
   const handleAddOfferRow = () => {
     setFormData((prev) => ({
       ...prev,
-      offers: [...(prev.offers || []), { label: "", packQuantity: "", price: "", originalPrice: "", savingText: "", freeShipping: false, isPopular: false }],
+      offers: [...(prev.offers || []), { label: "", packQuantity: "", price: "", originalPrice: "", savingText: "", gift: "", freeShipping: false, isPopular: false }],
     }));
   };
 
@@ -233,6 +235,7 @@ export default function AdminProductsPage() {
           price: Number(offer.price),
           originalPrice: (originalPriceNumber || priceNumber) * Number(offer.packQuantity),
           savingText: offer.savingText.trim(),
+          gift: offer.gift.trim(),
           freeShipping: offer.freeShipping,
           isPopular: offer.isPopular,
         })),
@@ -242,6 +245,9 @@ export default function AdminProductsPage() {
           ? label.trim()
           : `Design ${index + 1}`;
       }),
+      videos: (formData.videos || [])
+        .map((url) => url.trim())
+        .filter(Boolean),
       keyBenefits: formData.keyBenefits
         .split("\n")
         .map((s) => s.trim())
@@ -358,6 +364,7 @@ export default function AdminProductsPage() {
           : (product.images || []).map((_: string, index: number) =>
               `Design ${index + 1}`,
             ),
+          videos: Array.isArray(product.videos) ? product.videos : [],
       sizes: Array.isArray(product.sizes)
         ? product.sizes.map((s: any) => ({
             name: s.name || "",
@@ -372,6 +379,7 @@ export default function AdminProductsPage() {
             price: typeof offer.price === "number" ? offer.price : "",
             originalPrice: typeof offer.originalPrice === "number" ? offer.originalPrice : "",
             savingText: offer.savingText || "",
+            gift: offer.gift || "",
             freeShipping: !!offer.freeShipping,
             isPopular: !!offer.isPopular,
           }))
@@ -417,6 +425,7 @@ export default function AdminProductsPage() {
       ratings: "",
       images: [],
       imageLabels: [],
+      videos: [],
       sizes: [],
       offers: [],
       isFeatured: false,
@@ -1312,6 +1321,7 @@ export default function AdminProductsPage() {
                   <div key={idx} className="grid grid-cols-2 md:grid-cols-12 gap-2.5 bg-white p-3 rounded-xl border border-emerald-200 items-center">
                     <input className="px-3 py-2 border border-gray-200 rounded-lg text-xs" type="number" min="2" placeholder="Packs (2 or 3)" value={offer.packQuantity} onChange={(e) => handleOfferChange(idx, "packQuantity", e.target.value === "" ? "" : Number(e.target.value))} />
                     <input className="md:col-span-3 px-3 py-2 border border-gray-200 rounded-lg text-xs" type="number" min="0" placeholder="Offer price" value={offer.price} onChange={(e) => handleOfferChange(idx, "price", e.target.value === "" ? "" : Number(e.target.value))} />
+                    <input className="md:col-span-3 px-3 py-2 border border-gray-200 rounded-lg text-xs" type="text" placeholder="Gift (e.g. Free Hair Oil)" value={offer.gift} onChange={(e) => handleOfferChange(idx, "gift", e.target.value)} />
                     <span className="md:col-span-3 px-3 py-2 border border-gray-100 rounded-lg text-xs text-gray-500 bg-gray-50">Original: {formData.price !== "" && offer.packQuantity !== "" ? formatPrice((Number(formData.originalPrice) || Number(formData.price)) * Number(offer.packQuantity)) : "Auto calculated"}</span>
                     <label className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-700"><input type="checkbox" checked={offer.freeShipping} onChange={(e) => handleOfferChange(idx, "freeShipping", e.target.checked)} /> Free shipping</label>
                     <label className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-700"><input type="checkbox" checked={offer.isPopular} onChange={(e) => handleOfferChange(idx, "isPopular", e.target.checked)} /> Popular</label>
@@ -1469,6 +1479,69 @@ export default function AdminProductsPage() {
                     )}
                   </div>
                 </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <label className="text-sm font-semibold text-gray-700">
+                      Product Videos
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Add one or more Cloudinary video URLs. Each URL will render on the product page.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        videos: [...(prev.videos || []), ""],
+                      }))
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[#B9853A] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#9a6d2f] cursor-pointer"
+                  >
+                    <FiPlus size={14} /> Add Video URL
+                  </button>
+                </div>
+
+                {(formData.videos || []).length > 0 && (
+                  <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    {formData.videos.map((videoUrl, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <input
+                          type="url"
+                          value={videoUrl}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              videos: (prev.videos || []).map((url, videoIndex) =>
+                                videoIndex === index ? e.target.value : url,
+                              ),
+                            }))
+                          }
+                          placeholder="https://res.cloudinary.com/.../video/upload/..."
+                          className="min-w-0 flex-1 border-b border-gray-300 bg-transparent px-0 py-2 text-sm font-light text-gray-800 focus:border-black focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              videos: (prev.videos || []).filter(
+                                (_, videoIndex) => videoIndex !== index,
+                              ),
+                            }))
+                          }
+                          aria-label={`Remove video ${index + 1}`}
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 transition hover:text-red-600 cursor-pointer"
+                        >
+                          <FiX size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
