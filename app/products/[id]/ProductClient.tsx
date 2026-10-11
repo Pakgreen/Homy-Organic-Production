@@ -799,14 +799,14 @@ export default function ProductClient({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#fffdf8] via-[#faf9f6] to-[#f3eee6] py-6 font-[var(--font-roboto)] text-stone-900 sm:py-10">
+    <div className="min-h-screen bg-white py-5 font-[var(--font-roboto)] text-stone-900 sm:py-8">
       {/* Google Rich Snippets SEO Schema */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 sm:space-y-14">
+      <div className="mx-auto max-w-6xl space-y-8 px-4 sm:space-y-10 sm:px-6 lg:px-8">
         {/* Subtle Breadcrumb */}
         <nav className="flex items-center gap-2 text-xs text-stone-500 font-medium">
           <Link href="/" className="hover:text-stone-900 transition-colors">
@@ -922,7 +922,7 @@ export default function ProductClient({
           </div>
 
           {/* Right Side: Product Details & Action Buttons */}
-          <div className="lg:col-span-6 flex flex-col space-y-4">
+          <div className="flex flex-col space-y-3.5 lg:col-span-6">
             {/* Category / Subtitle */}
             <div className="text-[11px] font-semibold uppercase tracking-widest text-stone-500">
               {product.brand || "Homy Organic"}
@@ -975,7 +975,7 @@ export default function ProductClient({
             {/* Product Weight & Shipping */}
             <div className="flex flex-wrap items-center gap-3 text-xs text-stone-600">
               {product.weight && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-black text-white text-[11px] font-medium tracking-wide">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D85A24] bg-[#E8662D] px-2.5 py-1 text-[11px] font-bold tracking-wide text-white shadow-sm">
                   Weight: <span className="font-semibold text-white">{product.weight}</span>
                 </span>
               )}
@@ -1014,7 +1014,7 @@ export default function ProductClient({
               <div className="w-full space-y-2.5 pt-2">
                 <div className="flex items-center gap-3">
                   <span className="h-px flex-1 bg-stone-200" />
-                  <h2 className="whitespace-nowrap rounded-full bg-orange-100 px-3 py-1 text-base font-black uppercase tracking-wider text-orange-800 shadow-sm sm:text-lg">
+                  <h2 className="whitespace-nowrap rounded-full border border-[#D85A24] bg-[#E8662D] px-3 py-1 text-base font-black uppercase tracking-wider !text-white shadow-sm sm:text-lg">
                     Buy More, Save More
                   </h2>
                   <span className="h-px flex-1 bg-stone-200" />
@@ -1240,7 +1240,7 @@ export default function ProductClient({
                 } ${
                   isOutOfStock
                     ? "bg-stone-200 text-stone-400 cursor-not-allowed"
-                    : "border-2 border-black bg-black hover:bg-stone-900 text-white active:scale-[0.99] cursor-pointer"
+                    : "border-2 border-[#D85A24] bg-[#E8662D] text-white hover:bg-[#D85A24] active:scale-[0.99] cursor-pointer"
                 }`}
               >
                 {!isOutOfStock && <span className="buy-now-shine" aria-hidden="true" />}
@@ -1340,7 +1340,7 @@ export default function ProductClient({
             {product.contentSections.map((section: any, index: number) => (
               <div
                 key={`${section.title || "section"}-${index}`}
-                className="space-y-4 py-6"
+                className="mx-auto w-full max-w-5xl space-y-4 py-7 sm:py-8"
               >
                 {section.title && (
                   <h3 className="text-base font-semibold text-stone-900 sm:text-lg">
