@@ -54,6 +54,12 @@ const menuItems: MenuItem[] = [
     requiredPermission: "manage_products",
   },
   {
+    icons: <FiGift size={22} />,
+    label: "Special Bundles & Exclusive Deals",
+    href: "/admin/value-packs",
+    requiredPermission: "manage_products",
+  },
+  {
     icons: <FiPackage size={22} />,
     label: "Orders",
     href: "/admin/orders",

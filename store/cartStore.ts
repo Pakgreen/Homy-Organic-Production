@@ -39,17 +39,6 @@ export const useCartStore = create<CartStore>()(
         const items = get().items;
         const existingItem = items.find((i) => i._id === item._id && i.size === item.size);
 
-        // Track Meta Pixel AddToCart Event with Meta-safe standard params only
-        try {
-          trackPixelEvent('AddToCart', {
-            content_ids: [item._id],
-            value: item.price * item.quantity,
-            currency: 'PKR',
-          });
-        } catch (e) {
-          // ignore tracking errors
-        }
-
         if (existingItem) {
           set({
             items: items.map((i) =>
@@ -62,6 +51,14 @@ export const useCartStore = create<CartStore>()(
         } else {
           set({ items: [...items, item], isOpen: true });
         }
+
+        trackPixelEvent("AddToCart", {
+          content_ids: [item._id],
+          content_type: "product",
+          value: item.price * item.quantity,
+          currency: "PKR",
+          contents: [{ id: item._id, quantity: item.quantity }],
+        });
       },
 
       removeItem: (id: string) => {

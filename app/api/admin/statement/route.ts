@@ -58,7 +58,9 @@ export async function POST(req: Request) {
     let totalItemsSold = 0;
 
     orders.forEach((o: any) => {
-      totalRevenue += o.totalPrice || 0;
+      if (o.status === "delivered" && o.isPaid) {
+        totalRevenue += o.totalPrice || 0;
+      }
       if (o.status === "delivered") deliveredOrders++;
       if (o.status === "pending") pendingOrders++;
 

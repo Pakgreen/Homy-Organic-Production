@@ -16,9 +16,9 @@ export interface IOrder extends Document {
     fullName: string;
     address: string;
     city?: string;
-    postalCode?: string;
     country?: string;
     phone: string;
+    alternatePhone?: string;
   };
   paymentMethod: string;
   itemsPrice: number;
@@ -68,9 +68,9 @@ const OrderSchema: Schema = new Schema(
       fullName: { type: String, required: true },
       address: { type: String, required: true },
       city: { type: String, required: false, default: '' },
-      postalCode: { type: String, required: false, default: '' },
       country: { type: String, required: false, default: '' },
       phone: { type: String, required: true },
+      alternatePhone: { type: String, required: false, default: '' },
     },
     paymentMethod: {
       type: String,

@@ -21,6 +21,8 @@ export default function SiteSettingsPage() {
     whatsappMessage: string;
     contactAddress: string;
     paymentAccountDetails: string;
+    paymentAccountTitle: string;
+    paymentAccountNumber: string;
     allowedPaymentMethods: "both" | "cod" | "prepaid";
     deliveryChargesEnabled: boolean;
     deliveryChargeAmount: number | "";
@@ -37,6 +39,8 @@ export default function SiteSettingsPage() {
     whatsappMessage: "",
     contactAddress: "",
     paymentAccountDetails: "",
+    paymentAccountTitle: "",
+    paymentAccountNumber: "",
     allowedPaymentMethods: "both",
     deliveryChargesEnabled: false,
     deliveryChargeAmount: "",
@@ -61,6 +65,8 @@ export default function SiteSettingsPage() {
           paymentAccountDetails:
             data.paymentAccountDetails ||
             "0039300940940940940: (Sadia Riaz)",
+          paymentAccountTitle: data.paymentAccountTitle || "",
+          paymentAccountNumber: data.paymentAccountNumber || "",
           allowedPaymentMethods: data.allowedPaymentMethods || "both",
           deliveryChargesEnabled: data.deliveryChargesEnabled || false,
           deliveryChargeAmount: data.deliveryChargeAmount || "",
@@ -402,15 +408,39 @@ export default function SiteSettingsPage() {
 
           <div>
             <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">
-              Prepaid Payment Account Details
+              Prepaid Payment Account
             </label>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <input
+                type="text"
+                value={formData.paymentAccountTitle}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, paymentAccountTitle: e.target.value }))
+                }
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm transition-all placeholder:text-gray-300 focus:border-[#B9853A] focus:bg-white focus:outline-none"
+                placeholder="Account title e.g. Sadia Riaz"
+              />
+              <input
+                type="text"
+                inputMode="tel"
+                value={formData.paymentAccountNumber}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, paymentAccountNumber: e.target.value }))
+                }
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm transition-all placeholder:text-gray-300 focus:border-[#B9853A] focus:bg-white focus:outline-none"
+                placeholder="Account number"
+              />
+            </div>
+            <p className="mt-1 text-xs text-gray-400">
+              Title and number are shown separately at checkout with a copy button.
+            </p>
             <div className="relative">
               <textarea
                 value={formData.paymentAccountDetails}
                 onChange={(e) => setFormData((prev) => ({ ...prev, paymentAccountDetails: e.target.value }))}
                 rows={2}
                 className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:border-[#B9853A] focus:bg-white transition-all placeholder:text-gray-300 resize-none"
-                placeholder="JazzCash / EasyPaisa / Bank transfer details shown at checkout"
+                placeholder="Optional extra details, e.g. JazzCash / EasyPaisa / Bank name"
               />
             </div>
             <p className="text-xs text-gray-400 mt-1">

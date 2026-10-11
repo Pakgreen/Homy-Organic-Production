@@ -280,6 +280,22 @@ button.bg-black, button[type="submit"], .btn-primary {
   color: var(--btn-text) !important;
 }
 
+button#checkout-submit-button,
+button#checkout-submit-button:hover,
+button#checkout-submit-button:focus,
+button#checkout-submit-button:active {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+button#coupon-apply-button,
+button#coupon-apply-button:hover,
+button#coupon-apply-button:focus,
+button#coupon-apply-button:active {
+  background-color: #f97316 !important;
+  color: #ffffff !important;
+}
+
 /* Overriding explicit white backgrounds to match main theme */
 .bg-white {
   background-color: var(--background-color) !important;
@@ -292,4 +308,3 @@ footer.bg-white {
 footer.bg-white, footer.bg-white * {
   color: var(--footer-text) !important;
 }
-

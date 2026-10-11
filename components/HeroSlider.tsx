@@ -115,12 +115,34 @@ export default function HeroSlider({
           spaceBetween={0}
         >
           {sliders.map((slider, idx) => {
-            const mobileImg = getOptimizedImageUrl(slider.image, 800, "auto");
-            const desktopImg = getOptimizedImageUrl(slider.desktopImage || slider.image, 2560, "auto");
+            const mobileImg = getOptimizedImageUrl(slider.image, 640, "auto");
+            const desktopImg = getOptimizedImageUrl(
+              slider.desktopImage || slider.image,
+              1920,
+              "auto",
+            );
 
             return (
               <SwiperSlide key={slider._id}>
                 <div className="relative w-full overflow-hidden rounded-none">
+                  {idx === 0 && (
+                    <>
+                      <link
+                        rel="preload"
+                        as="image"
+                        href={mobileImg}
+                        media="(max-width: 767px)"
+                        fetchPriority="high"
+                      />
+                      <link
+                        rel="preload"
+                        as="image"
+                        href={desktopImg}
+                        media="(min-width: 768px)"
+                        fetchPriority="high"
+                      />
+                    </>
+                  )}
                   <picture>
                     <source media="(min-width: 768px)" srcSet={desktopImg} />
                     <img

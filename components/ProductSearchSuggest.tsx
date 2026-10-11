@@ -4,6 +4,7 @@ import Image from "next/image";
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiLoader, FiSearch, FiX } from "react-icons/fi";
+import { event as trackPixelEvent } from "@/lib/metaPixel";
 
 type SearchProduct = {
   _id: string;
@@ -25,6 +26,7 @@ export default function ProductSearchSuggest({
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<SearchProduct[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -49,12 +51,14 @@ export default function ProductSearchSuggest({
     if (searchTerm.length < 1) {
       setSuggestions([]);
       setIsLoading(false);
+      setHasSearched(false);
       return;
     }
 
     const controller = new AbortController();
+    setIsLoading(true);
+    setHasSearched(false);
     const timer = window.setTimeout(async () => {
-      setIsLoading(true);
       try {
         const response = await fetch(
           `/api/products?search=${encodeURIComponent(searchTerm)}&limit=6&available=true`,
@@ -63,15 +67,19 @@ export default function ProductSearchSuggest({
         if (!response.ok) throw new Error("Failed to fetch suggestions");
 
         const data = await response.json();
-        setSuggestions(Array.isArray(data.products) ? data.products : []);
+        setSuggestions(
+          Array.isArray(data) ? data : Array.isArray(data.products) ? data.products : [],
+        );
+        setHasSearched(true);
       } catch (error) {
         if ((error as Error).name !== "AbortError") {
           setSuggestions([]);
+          setHasSearched(true);
         }
       } finally {
         if (!controller.signal.aborted) setIsLoading(false);
       }
-    }, 3000);
+    }, 300);
 
     return () => {
       window.clearTimeout(timer);
@@ -83,6 +91,9 @@ export default function ProductSearchSuggest({
     event.preventDefault();
     const search = query.trim();
     if (!search) return;
+    trackPixelEvent("Search", {
+      content_type: "product",
+    });
     router.push(`/products?search=${encodeURIComponent(search)}`);
   };
 
@@ -127,7 +138,7 @@ export default function ProductSearchSuggest({
         )}
       </form>
 
-      {(isLoading || suggestions.length > 0 || (query.trim() && !isLoading)) && (
+      {(isLoading || suggestions.length > 0 || hasSearched) && (
         <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
           {isLoading ? (
             <div className="flex items-center gap-2 px-4 py-4 text-sm text-gray-500">

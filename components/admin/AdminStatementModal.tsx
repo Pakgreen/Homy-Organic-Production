@@ -744,7 +744,7 @@ export default function AdminStatementModal({
                   </p>
                   {currentOrder.shippingAddress?.city && (
                     <p className="text-xs text-gray-600">
-                      {currentOrder.shippingAddress.city} {currentOrder.shippingAddress.postalCode}
+                      {currentOrder.shippingAddress.city}
                     </p>
                   )}
                 </div>

@@ -26,7 +26,6 @@ export default function CourierShippingSlip({
   const customerPhone = order.shippingAddress?.phone || "N/A";
   const customerAddress = order.shippingAddress?.address || "N/A";
   const customerCity = order.shippingAddress?.city || "N/A";
-  const customerPostalCode = order.shippingAddress?.postalCode || "";
   const paymentMethod = order.paymentMethod ? String(order.paymentMethod).toUpperCase() : "COD";
   const isPaid = order.isPaid;
   const storePhone = siteConfig?.contact?.phone || "+92 302 3735860";
@@ -113,7 +112,7 @@ export default function CourierShippingSlip({
             </p>
             <p className="font-bold text-gray-900 text-sm">{customerName}</p>
             <p className="text-gray-800 leading-snug">{customerAddress}</p>
-            <p className="text-gray-800 font-semibold">{customerCity} {customerPostalCode}</p>
+            <p className="text-gray-800 font-semibold">{customerCity}</p>
             <p className="text-gray-900 font-mono font-bold pt-0.5">Phone: {customerPhone}</p>
           </div>
 

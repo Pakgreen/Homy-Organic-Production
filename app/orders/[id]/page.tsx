@@ -328,7 +328,7 @@ export default function OrderDetailPage() {
               <p className="text-gray-500 text-sm leading-relaxed">
                 {order.shippingAddress.address}
                 <br />
-                {order.shippingAddress.city}, {order.shippingAddress.postalCode}
+                {order.shippingAddress.city}
                 <br />
                 {order.shippingAddress.country}
               </p>

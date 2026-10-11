@@ -13,6 +13,7 @@ import {
   FiClock,
   FiTruck,
   FiCheckCircle,
+  FiXCircle,
   FiAlertCircle,
   FiPrinter,
   FiFileText,
@@ -131,13 +132,6 @@ export default function AdminDashboard() {
       bg: "#FDF6EC",
     },
     {
-      label: "Total Orders",
-      value: stats?.totalOrders || 0,
-      icon: <FiPackage size={20} />,
-      accent: "#3A7BD5",
-      bg: "#EEF3FB",
-    },
-    {
       label: "Products",
       value: stats?.totalProducts || 0,
       icon: <FiShoppingBag size={20} />,
@@ -155,10 +149,12 @@ export default function AdminDashboard() {
 
   // Pipeline cards
   const pipeline = [
+    { label: "Total Orders", value: stats?.totalOrders || 0, icon: <FiPackage size={18} />, color: "#3A7BD5", bg: "#EEF3FB" },
     { label: "Pending", value: stats?.pendingOrders || 0, icon: <FiClock size={18} />, color: "#F59E0B", bg: "#FFFBEB" },
     { label: "Processing", value: stats?.processingOrders || 0, icon: <FiAlertCircle size={18} />, color: "#3B82F6", bg: "#EFF6FF" },
     { label: "Shipped", value: stats?.shippedOrders || 0, icon: <FiTruck size={18} />, color: "#8B5CF6", bg: "#F5F3FF" },
     { label: "Delivered", value: stats?.deliveredOrders || 0, icon: <FiCheckCircle size={18} />, color: "#10B981", bg: "#ECFDF5" },
+    { label: "Cancelled", value: stats?.cancelledOrders || 0, icon: <FiXCircle size={18} />, color: "#EF4444", bg: "#FEF2F2" },
   ];
 
   return (
@@ -237,7 +233,7 @@ export default function AdminDashboard() {
       {/* Order Pipeline */}
       <div>
         <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Order Pipeline</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {pipeline.map((item, i) => (
             <div
               key={i}

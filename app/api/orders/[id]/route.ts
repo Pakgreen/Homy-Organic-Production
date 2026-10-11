@@ -130,6 +130,18 @@ export async function PUT(
       );
     }
 
+    const nextStatus = data.status || order.status;
+
+    if (data.isPaid === true && nextStatus !== "delivered") {
+      return NextResponse.json(
+        {
+          error: "An order can only be marked as paid after it is delivered",
+          code: "PAYMENT_REQUIRES_DELIVERY",
+        },
+        { status: 400 },
+      );
+    }
+
     if (data.status) {
       order.status = data.status;
 
@@ -139,14 +151,21 @@ export async function PUT(
       }
     }
 
+    if (nextStatus !== "delivered") {
+      order.isPaid = false;
+      order.paidAt = undefined;
+    }
+
     if (data.trackingNumber) {
       order.trackingNumber = data.trackingNumber;
     }
 
-    if (data.isPaid !== undefined) {
+    if (data.isPaid !== undefined && nextStatus === "delivered") {
       order.isPaid = data.isPaid;
       if (data.isPaid) {
         order.paidAt = new Date();
+      } else {
+        order.paidAt = undefined;
       }
     }
 

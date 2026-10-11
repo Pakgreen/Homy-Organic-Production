@@ -1,26 +1,38 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Script from "next/script";
 import * as pixel from "@/lib/metaPixel";
 
 export default function MetaPixel() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const pixelId = pixel.FB_PIXEL_ID;
   const isInitialRoute = useRef(true);
+  const lastPageView = useRef("");
 
   useEffect(() => {
+    const routeKey =
+      typeof window !== "undefined"
+        ? `${pathname || ""}${window.location.search}`
+        : pathname || "";
+
     if (isInitialRoute.current) {
       isInitialRoute.current = false;
+      lastPageView.current = routeKey;
       return;
     }
 
-    if (pixelId && typeof window !== "undefined" && typeof window.fbq === "function") {
+    if (
+      pixelId &&
+      routeKey !== lastPageView.current &&
+      typeof window !== "undefined" &&
+      typeof window.fbq === "function"
+    ) {
+      lastPageView.current = routeKey;
       window.fbq("track", "PageView");
     }
-  }, [pathname, searchParams, pixelId]);
+  }, [pathname, pixelId]);
 
   if (!pixelId) {
     return null;

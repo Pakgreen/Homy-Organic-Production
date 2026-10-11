@@ -25,11 +25,16 @@ import {
 } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 import { useCartStore } from "@/store/cartStore";
+import { event as trackPixelEvent } from "@/lib/metaPixel";
 import { formatPrice } from "@/lib/utils";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import ProductCard from "@/components/ProductCard";
-import { getOptimizedImageUrl } from "@/lib/image";
+import {
+  getOptimizedImageUrl,
+  getOptimizedVideoUrl,
+  getVideoPosterUrl,
+} from "@/lib/image";
 import TikTokVerifiedTick from "@/components/TikTokVerifiedTick";
 import VerifiedBuyerBadge from "@/components/VerifiedBuyerBadge";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -84,6 +89,7 @@ export default function ProductClient({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  const trackedProductId = useRef<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<any>(
     initialProduct?.sizes?.[0] || null,
   );
@@ -244,6 +250,13 @@ export default function ProductClient({
     }
     return [];
   }, [product?.videos, product?.video]);
+
+  const isGlassGlowProduct =
+    typeof product?.slug === "string"
+      ? product.slug ===
+        "glass-glow-face-pack-premium-ubtan-3-in-1-cleanser-scrub-mask"
+      : typeof product?.name === "string" &&
+        product.name.toLowerCase().includes("glass glow face pack");
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -512,6 +525,21 @@ export default function ProductClient({
     (typeof product?.stock === "number" && product.stock <= 0) ||
     (typeof product?.countInStock === "number" && product.countInStock <= 0);
 
+  useEffect(() => {
+    const productIdForTracking = product?._id?.toString();
+    if (!productIdForTracking || trackedProductId.current === productIdForTracking) {
+      return;
+    }
+
+    trackedProductId.current = productIdForTracking;
+    trackPixelEvent("ViewContent", {
+      content_ids: [productIdForTracking],
+      content_type: "product",
+      value: Number(product.price) || 0,
+      currency: "PKR",
+    });
+  }, [product]);
+
   const handleAddToCart = () => {
     if (isOutOfStock) {
       toast.error("Sorry, this product is currently out of stock!");
@@ -778,7 +806,7 @@ export default function ProductClient({
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] py-6 text-stone-900 sm:py-10">
+    <div className="min-h-screen bg-gradient-to-b from-[#fffdf8] via-[#faf9f6] to-[#f3eee6] py-6 font-[var(--font-roboto)] text-stone-900 sm:py-10">
       {/* Google Rich Snippets SEO Schema */}
       <script
         type="application/ld+json"
@@ -955,7 +983,7 @@ export default function ProductClient({
             <div className="flex flex-wrap items-center gap-3 text-xs text-stone-600">
               {product.weight && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-black text-white text-[11px] font-medium tracking-wide">
-                  Net Weight: <span className="font-semibold text-white">{product.weight}</span>
+                  Weight: <span className="font-semibold text-white">{product.weight}</span>
                 </span>
               )}
               {product.weight && <span className="text-stone-300">•</span>}
@@ -993,7 +1021,7 @@ export default function ProductClient({
               <div className="w-full space-y-2.5 pt-2">
                 <div className="flex items-center gap-3">
                   <span className="h-px flex-1 bg-stone-200" />
-                  <h2 className="whitespace-nowrap text-xs font-bold uppercase tracking-wider text-stone-700">
+                  <h2 className="whitespace-nowrap text-xs font-extrabold uppercase tracking-wider text-stone-700">
                     Buy More, Save More
                   </h2>
                   <span className="h-px flex-1 bg-stone-200" />
@@ -1317,6 +1345,116 @@ export default function ProductClient({
             </div>
           </div>
         </div>
+
+        {isGlassGlowProduct && (
+          <div className="w-full divide-y divide-stone-200 border-y border-stone-200">
+            <div className="grid grid-cols-1 items-center gap-5 py-6 sm:grid-cols-[minmax(180px,280px)_1fr] sm:gap-8">
+              <Image
+                src="https://res.cloudinary.com/qmgjj5vu/image/upload/v1791657985/Organic_Powder_Kraft_Pouch_with_Wooden_Spoon_zsq1st.png"
+                alt="Glass Glow Face Pack by Homy Organic"
+                width={1200}
+                height={800}
+                sizes="(max-width: 640px) 100vw, 280px"
+                className="h-auto w-full object-contain"
+              />
+              <p className="text-sm leading-relaxed text-stone-800">
+                <strong className="font-semibold text-stone-900">
+                  Glass Glow Face Pack
+                </strong>{" "}
+                by Homy Organic is a traditional-inspired
+                3-in-1 Ubtan, Cleansing Scrub &amp; Mask. It helps cleanse the
+                skin, gently exfoliate surface buildup, and leave the skin
+                feeling fresh, smooth and naturally glowing-looking.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 items-center gap-5 py-6 sm:grid-cols-[1fr_minmax(180px,280px)] sm:gap-8">
+              <div className="text-sm leading-relaxed text-stone-800">
+                <h3 className="mb-2 text-base font-semibold text-stone-900 sm:text-lg">
+                  14+ Traditional Ingredients &amp; Herbs
+                </h3>
+                <p>
+                  Made with a carefully selected blend of 14+ traditional
+                  ingredients and herbs, it brings a simple, time-tested
+                  skincare ritual into your routine.
+                </p>
+              </div>
+              <Image
+                src="https://res.cloudinary.com/qmgjj5vu/image/upload/v1791657274/14_Natural_Ingredients_for_Glowing_Skin_p8mh9h.png"
+                alt="14+ traditional ingredients and herbs"
+                width={1200}
+                height={800}
+                sizes="(max-width: 640px) 100vw, 280px"
+                className="h-auto w-full object-contain"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 items-center gap-5 py-6 sm:grid-cols-[minmax(180px,280px)_1fr] sm:gap-8">
+              <Image
+                src="https://res.cloudinary.com/qmgjj5vu/image/upload/v1791658278/Glass_Skin_Glow_Skincare_Ad_z0pgoe.png"
+                alt="Fresh glass-skin glow in a 20-minute ritual"
+                width={1200}
+                height={800}
+                sizes="(max-width: 640px) 100vw, 280px"
+                className="h-auto w-full object-contain"
+              />
+              <div className="text-sm leading-relaxed text-stone-800">
+                <h3 className="mb-2 text-base font-semibold text-stone-900 sm:text-lg">
+                  3. Fresh, Glass-Skin Glow in a 20-Minute Ritual
+                </h3>
+                <p>
+                  Enjoy a simple skincare ritual in just 20 minutes. Glass
+                  Glow Face Pack helps leave skin feeling fresh, smooth and
+                  naturally radiant-looking.
+                </p>
+                <p className="mt-3">
+                  Inspired by “Glass Skin” — smooth, fresh and naturally
+                  radiant-looking skin — Glass Glow supports a healthy-looking
+                  glow without changing your natural skin tone.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 items-center gap-5 py-6 sm:grid-cols-[1fr_minmax(180px,280px)] sm:gap-8">
+              <div className="text-sm leading-relaxed text-stone-800">
+                <h3 className="mb-2 text-base font-semibold text-stone-900 sm:text-lg">
+                  4. Brides &amp; Grooms: Start Your Glow Routine Early
+                </h3>
+                <p>
+                  Preparing for your special day? Brides and grooms can make
+                  Glass Glow part of a consistent pre-wedding skincare routine.
+                </p>
+              </div>
+              <Image
+                src="https://res.cloudinary.com/qmgjj5vu/image/upload/v1791657471/Bridal_Ubtan_Glow_Infographic_c8zhvj.png"
+                alt="Bridal and groom pre-wedding glow routine"
+                width={1200}
+                height={800}
+                sizes="(max-width: 640px) 100vw, 280px"
+                className="h-auto w-full object-contain"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 items-center gap-5 py-6 sm:grid-cols-[minmax(180px,280px)_1fr] sm:gap-8">
+              <Image
+                src="https://res.cloudinary.com/qmgjj5vu/image/upload/v1791656811/Natural_Skincare_Ritual_Collage_yvtn1n.png"
+                alt="Natural skincare ritual for face, hands and body"
+                width={1200}
+                height={800}
+                sizes="(max-width: 640px) 100vw, 280px"
+                className="h-auto w-full object-contain"
+              />
+              <div className="text-sm leading-relaxed text-stone-800">
+                <h3 className="mb-2 text-base font-semibold text-stone-900 sm:text-lg">
+                  5. For Face, Hands &amp; Body
+                </h3>
+                <p>
+                  Glass Glow Face Pack can be used on the face, hands and body.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Product Details & Specifications (Minimal Editorial Divider Rows, No Cards) */}
         {!product.isValuePack &&
@@ -1744,10 +1882,11 @@ export default function ProductClient({
                   <div className="relative aspect-[9/16] w-full overflow-hidden bg-stone-900 rounded-xl sm:rounded-2xl">
                     {/* Desktop: Play directly right here in the grid (No Dialog) */}
                     <video
-                      src={videoUrl}
+                      src={getOptimizedVideoUrl(videoUrl)}
+                      poster={getVideoPosterUrl(videoUrl)}
                       controls
                       playsInline
-                      preload="metadata"
+                      preload="auto"
                       className="hidden md:block h-full w-full object-cover"
                     />
 
@@ -1757,10 +1896,11 @@ export default function ProductClient({
                       className="md:hidden relative h-full w-full cursor-pointer"
                     >
                       <video
-                        src={videoUrl}
+                        src={getOptimizedVideoUrl(videoUrl)}
+                        poster={getVideoPosterUrl(videoUrl)}
                         muted
                         playsInline
-                        preload="metadata"
+                        preload="auto"
                         className="h-full w-full object-cover pointer-events-none"
                       />
                       {/* Mobile Gradient Overlay */}
@@ -1823,7 +1963,8 @@ export default function ProductClient({
                 <video
                   ref={dialogVideoRef}
                   key={productVideos[activeVideoIndex]}
-                  src={productVideos[activeVideoIndex]}
+                  src={getOptimizedVideoUrl(productVideos[activeVideoIndex])}
+                  poster={getVideoPosterUrl(productVideos[activeVideoIndex])}
                   autoPlay
                   controls
                   playsInline

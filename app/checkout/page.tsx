@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
@@ -29,6 +29,9 @@ export default function CheckoutPage() {
   const [allowedPaymentMethods, setAllowedPaymentMethods] = useState<"both" | "cod" | "prepaid">("both");
   const [paymentMethod, setPaymentMethod] = useState("Cash on Delivery");
   const [paymentDetails, setPaymentDetails] = useState("");
+  const [paymentAccountTitle, setPaymentAccountTitle] = useState("");
+  const [paymentAccountNumber, setPaymentAccountNumber] = useState("");
+  const [paymentDetailsCopied, setPaymentDetailsCopied] = useState(false);
   const [deliveryData, setDeliveryData] = useState<{
     enabled: boolean;
     amount: number;
@@ -36,6 +39,7 @@ export default function CheckoutPage() {
   const [prepaidDiscountData, setPrepaidDiscountData] = useState({ enabled: false, amount: 0 });
   const [selectedCountryCode, setSelectedCountryCode] = useState("+92");
   const [saveDetails, setSaveDetails] = useState(true);
+  const trackedCheckout = useRef("");
 
   // Form Fields
   const [formData, setFormData] = useState({
@@ -43,8 +47,8 @@ export default function CheckoutPage() {
     email: "",
     address: "",
     city: "",
-    postalCode: "",
     phone: "",
+    alternatePhone: "",
     paymentReference: "",
     paymentProofUrl: "",
     newsOffers: true,
@@ -70,18 +74,41 @@ export default function CheckoutPage() {
     }
   };
 
+  const handleCopyPaymentDetails = async () => {
+    if (!paymentAccountNumber && !paymentDetails) return;
+
+    try {
+      await navigator.clipboard.writeText(paymentAccountNumber || paymentDetails);
+      setPaymentDetailsCopied(true);
+      toast.success("Payment number/details copied");
+      window.setTimeout(() => setPaymentDetailsCopied(false), 2000);
+    } catch {
+      toast.error("Unable to copy payment details");
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
     if (items.length === 0 && !showSuccessPopup) {
       router.push("/cart");
     } else if (items.length > 0) {
-      try {
-        trackPixelEvent('InitiateCheckout', {
+      const checkoutKey = items
+        .map((item) => `${item._id}:${item.quantity}`)
+        .sort()
+        .join("|");
+      if (trackedCheckout.current !== checkoutKey) {
+        trackedCheckout.current = checkoutKey;
+        trackPixelEvent("InitiateCheckout", {
+          content_ids: items.map((item) => item._id),
+          content_type: "product",
+          contents: items.map((item) => ({
+            id: item._id,
+            quantity: item.quantity,
+          })),
+          num_items: items.reduce((sum, item) => sum + item.quantity, 0),
           value: getTotalPrice(),
-          currency: 'PKR',
+          currency: "PKR",
         });
-      } catch (e) {
-        // ignore tracking errors
       }
     }
   }, [items, router, showSuccessPopup]);
@@ -101,8 +128,8 @@ export default function CheckoutPage() {
           email: parsed.email || prev.email,
           address: parsed.address || prev.address,
           city: parsed.city || prev.city,
-          postalCode: parsed.postalCode || prev.postalCode,
           phone: parsed.phone || prev.phone,
+          alternatePhone: parsed.alternatePhone || prev.alternatePhone,
         }));
         if (parsed.countryCode) {
           setSelectedCountryCode(parsed.countryCode);
@@ -129,6 +156,8 @@ export default function CheckoutPage() {
         if (res.data?.paymentAccountDetails) {
           setPaymentDetails(res.data.paymentAccountDetails);
         }
+        setPaymentAccountTitle(res.data?.paymentAccountTitle || "");
+        setPaymentAccountNumber(res.data?.paymentAccountNumber || "");
         if (res.data?.deliveryChargesEnabled) {
           setDeliveryData({
             enabled: true,
@@ -188,7 +217,6 @@ export default function CheckoutPage() {
           phone: prev.phone || profile.phone || "",
           address: prev.address || addr.street || "",
           city: prev.city || addr.city || "",
-          postalCode: prev.postalCode || addr.zipCode || "",
         }));
       } catch (e) {
         console.error("Failed to fetch user profile:", e);
@@ -201,8 +229,11 @@ export default function CheckoutPage() {
   const subtotal = getTotalPrice();
   const deliveryPrice = deliveryData.enabled ? deliveryData.amount : 0;
   const couponDiscountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
-  const prepaidDiscountAmount = paymentMethod === "Prepaid" && prepaidDiscountData.enabled
+  const availablePrepaidDiscount = prepaidDiscountData.enabled
     ? Math.min(prepaidDiscountData.amount, subtotal + deliveryPrice)
+    : 0;
+  const prepaidDiscountAmount = paymentMethod === "Prepaid" && prepaidDiscountData.enabled
+    ? availablePrepaidDiscount
     : 0;
   const discountAmount = couponDiscountAmount + prepaidDiscountAmount;
   const total = Math.max(0, subtotal + deliveryPrice - discountAmount);
@@ -281,6 +312,7 @@ export default function CheckoutPage() {
 
     const rawPhone = formData.phone.trim();
     const cleanDigits = rawPhone.replace(/[^0-9]/g, "");
+    const alternateDigits = formData.alternatePhone.replace(/[^0-9]/g, "");
 
     if (!rawPhone) {
       newErrors.phone = "Phone number is required";
@@ -298,6 +330,10 @@ export default function CheckoutPage() {
       if (cleanDigits.length < 6 || cleanDigits.length > 15) {
         newErrors.phone = `Invalid phone number for ${selectedCountryCode}`;
       }
+    }
+
+    if (formData.alternatePhone.trim() && (alternateDigits.length < 6 || alternateDigits.length > 15)) {
+      newErrors.alternatePhone = "Enter a valid alternate phone number";
     }
 
     if (paymentMethod === "Prepaid") {
@@ -343,7 +379,6 @@ export default function CheckoutPage() {
       const fullAddress = [
         formData.address,
         formData.city,
-        formData.postalCode,
       ]
         .filter(Boolean)
         .join(", ");
@@ -364,6 +399,11 @@ export default function CheckoutPage() {
           phone: formData.phone.startsWith("+")
             ? formData.phone
             : `${selectedCountryCode} ${formData.phone.replace(/^0/, "")}`,
+          alternatePhone: formData.alternatePhone.trim()
+          ? formData.alternatePhone.startsWith("+")
+            ? formData.alternatePhone.trim()
+            : `${selectedCountryCode} ${formData.alternatePhone.replace(/^0/, "").trim()}`
+          : "",
         },
         contactEmail: formData.email,
         paymentMethod,
@@ -390,8 +430,8 @@ export default function CheckoutPage() {
               email: formData.email,
               address: formData.address,
               city: formData.city,
-              postalCode: formData.postalCode,
               phone: formData.phone,
+              alternatePhone: formData.alternatePhone,
               countryCode: selectedCountryCode,
             })
           );
@@ -410,6 +450,12 @@ export default function CheckoutPage() {
           value: total,
           currency: "PKR",
           content_type: "product",
+          content_ids: items.map((item) => item._id),
+          contents: items.map((item) => ({
+            id: item._id,
+            quantity: item.quantity,
+          })),
+          num_items: items.reduce((sum, item) => sum + item.quantity, 0),
         }, orderId || undefined);
       } catch (e) {
         // ignore tracking error
@@ -538,7 +584,7 @@ export default function CheckoutPage() {
               <span>PKR ${(orderDataToPrint.itemsPrice || subtotal).toLocaleString()}</span>
             </div>
             <div class="summary-row">
-              <span>Shipping</span>
+              <span>Delivery</span>
               <span>${(orderDataToPrint.shippingPrice || deliveryPrice) === 0 ? "Free" : "PKR " + (orderDataToPrint.shippingPrice || deliveryPrice).toLocaleString()}</span>
             </div>
             ${
@@ -579,35 +625,39 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans text-gray-900">
-      {/* Authentic Shopify 2-Column Checkout Layout */}
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 min-h-screen border-x border-gray-100">
+    <div className="min-h-screen bg-white font-[var(--font-roboto)] font-light text-gray-900">
+      <div className="grid min-h-screen w-full grid-cols-1 bg-white lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)]">
         {/* LEFT COLUMN: Logo, Contact, Delivery, Payment Form */}
-        <div className="lg:col-span-7 py-8 px-4 sm:px-8 lg:px-12 space-y-8 order-2 lg:order-1 bg-white">
+        <div className="order-2 space-y-7 bg-white px-4 py-7 sm:px-10 lg:order-1 lg:px-14 lg:py-10">
           {/* Store Branding Header with Back Button */}
-          <div className="pb-3 border-b border-gray-100 flex items-center justify-between">
+          <div className="border-b border-gray-200 pb-5">
+            <div className="flex items-center justify-between">
             <Link href="/" className="inline-block">
               {siteLogo ? (
-                <img src={siteLogo} alt="Homy Organic" className="h-10 w-auto object-contain" />
+                <img src={siteLogo} alt="Homy Organic" className="h-9 w-auto object-contain" />
               ) : (
-                <span className="text-2xl font-bold tracking-tight text-black">Homy Organic</span>
+                <span className="text-xl font-semibold tracking-tight text-black">Homy Organic</span>
               )}
             </Link>
 
             <Link
               href="/cart"
-              className="text-xs font-semibold text-gray-600 hover:text-black flex items-center gap-1.5 transition-colors py-1.5 px-3 rounded-lg hover:bg-gray-100 cursor-pointer"
+              className="flex items-center gap-1.5 py-1 text-xs font-medium text-blue-600 transition-colors hover:text-blue-800 cursor-pointer"
             >
               <FiArrowLeft size={14} />
               <span>Back to Cart</span>
             </Link>
+            </div>
+            <p className="mt-4 text-[11px] tracking-wide text-gray-500">
+              Secure checkout &nbsp;•&nbsp; Fast delivery across Pakistan
+            </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
+          <form onSubmit={handleSubmit} className="space-y-9">
             {/* Contact Section */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h2 className="text-base font-bold text-gray-900 tracking-tight">Contact</h2>
+                <h2 className="text-base font-semibold tracking-tight text-gray-950">Contact information</h2>
                 {!session && (
                   <Link
                     href="/auth/signin"
@@ -649,7 +699,7 @@ export default function CheckoutPage() {
 
             {/* Delivery Section */}
             <div className="space-y-4 pt-2">
-              <h2 className="text-base font-bold text-gray-900 tracking-tight">Delivery</h2>
+              <h2 className="text-base font-semibold tracking-tight text-gray-950">Delivery details</h2>
 
               <div>
                 <label className="block text-[11px] text-gray-500 font-medium mb-1">
@@ -699,20 +749,13 @@ export default function CheckoutPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <input
                   type="text"
                   placeholder="City *"
                   required
                   value={formData.city}
                   onChange={(e) => handleInputChange("city", e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none"
-                />
-                <input
-                  type="text"
-                  placeholder="Postal code (optional)"
-                  value={formData.postalCode}
-                  onChange={(e) => handleInputChange("postalCode", e.target.value)}
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 bg-white focus:border-black focus:outline-none"
                 />
               </div>
@@ -730,6 +773,27 @@ export default function CheckoutPage() {
                 />
               </div>
 
+              <div>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="Alternate phone number (optional)"
+                  value={formData.alternatePhone}
+                  onChange={(e) => handleInputChange("alternatePhone", e.target.value)}
+                  className={`w-full rounded-xl border px-4 py-3 text-sm text-gray-900 bg-white transition-colors ${
+                    errors.alternatePhone
+                      ? "border-red-500 bg-red-50/20"
+                      : "border-gray-300 focus:border-black focus:outline-none"
+                  }`}
+                />
+                <p className="mt-1.5 text-[11px] text-gray-500">
+                  Add a second number for delivery coordination (optional).
+                </p>
+                {errors.alternatePhone && (
+                  <p className="mt-1 text-xs font-medium text-red-600">{errors.alternatePhone}</p>
+                )}
+              </div>
+
               <label className="flex items-center gap-2.5 cursor-pointer text-xs text-gray-700 select-none pt-1">
                 <input
                   type="checkbox"
@@ -741,12 +805,15 @@ export default function CheckoutPage() {
               </label>
             </div>
 
-            {/* Shipping Method Section */}
+            {/* Delivery Method Section */}
             <div className="space-y-3 pt-2">
-              <h2 className="text-base font-bold text-gray-900 tracking-tight">Shipping method</h2>
-              <div className="border border-gray-300 rounded-xl p-4 flex items-center justify-between bg-gray-50/50">
-                <span className="text-sm font-semibold text-gray-900">Standard Shipping</span>
-                <span className="text-sm font-bold text-gray-900">
+              <h2 className="text-base font-semibold tracking-tight text-gray-950">Delivery</h2>
+              <div className="flex items-center justify-between border-y border-gray-200 px-1 py-4">
+                <div>
+                  <span className="block text-sm font-semibold text-gray-950">Standard delivery</span>
+                  <span className="mt-0.5 block text-[11px] text-gray-500">Reliable delivery across Pakistan</span>
+                </div>
+                <span className="text-sm font-medium text-gray-900">
                   {deliveryData.enabled && deliveryData.amount > 0
                     ? `PKR ${deliveryData.amount.toLocaleString()}`
                     : "Free"}
@@ -757,13 +824,20 @@ export default function CheckoutPage() {
             {/* Payment Method Section */}
             <div className="space-y-3 pt-2">
               <div>
-                <h2 className="text-base font-bold text-gray-900 tracking-tight">Payment</h2>
+                <h2 className="text-base font-semibold tracking-tight text-gray-950">Payment</h2>
                 <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
                   <FiLock size={12} /> All transactions are secure and encrypted.
                 </p>
               </div>
 
-              <div className="border border-gray-300 rounded-xl overflow-hidden divide-y divide-gray-200 bg-white">
+              {availablePrepaidDiscount > 0 &&
+                (allowedPaymentMethods === "both" || allowedPaymentMethods === "prepaid") && (
+                  <div className="rounded-lg bg-gradient-to-r from-red-500 to-orange-500 px-4 py-2.5 text-center text-xs font-semibold text-white shadow-sm">
+                    Get PKR {availablePrepaidDiscount.toLocaleString()} off with advance payment via Bank Deposit, EasyPaisa, JazzCash or other available methods
+                  </div>
+                )}
+
+              <div className="divide-y divide-gray-200 border-y border-gray-200 bg-transparent">
                 {/* COD Option */}
                 {(allowedPaymentMethods === "both" || allowedPaymentMethods === "cod") && (
                   <div
@@ -804,15 +878,69 @@ export default function CheckoutPage() {
                         className="w-4 h-4 text-black focus:ring-black accent-black cursor-pointer"
                       />
                       <span className="text-sm font-bold text-gray-900">
-                        Bank Deposit / EasyPaisa / JazzCash
+                        Advance Payment: Bank Deposit / EasyPaisa / JazzCash
                       </span>
                     </div>
+                    <p className="mt-2 pl-7 text-[11px] leading-relaxed text-gray-500">
+                      After placing your order, our team will contact you to
+                      verify your advance payment before processing the order.
+                    </p>
 
                     {paymentMethod === "Prepaid" && (
                       <div className="mt-4 pl-7 space-y-4 animate-in fade-in">
-                        {paymentDetails && (
-                          <div className="bg-amber-50/60 p-3 rounded-lg border border-amber-200 text-xs text-amber-900 whitespace-pre-line font-mono">
-                            {paymentDetails}
+                        {(paymentAccountTitle || paymentAccountNumber || paymentDetails) && (
+                          <div className="flex items-start justify-between gap-3 border-y border-amber-200 bg-amber-50/60 px-1 py-3">
+                            <div className="min-w-0 space-y-1 text-xs text-amber-900">
+                              <img
+                                src="https://res.cloudinary.com/qmgjj5vu/image/upload/v1791659931/allied-bank-limited-logo_xrtuvq.png"
+                                alt="Allied Bank Limited"
+                                className="mb-3 h-14 w-auto object-contain object-left"
+                              />
+                              {paymentAccountTitle && (
+                                <p>
+                                  <span className="font-semibold">Account title:</span>{" "}
+                                  {paymentAccountTitle}
+                                </p>
+                              )}
+                              {paymentAccountNumber && (
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="font-mono">
+                                    <span className="font-sans font-semibold">Account number:</span>{" "}
+                                    {paymentAccountNumber}
+                                  </p>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleCopyPaymentDetails();
+                                    }}
+                                    className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-2.5 py-2 text-[11px] font-bold text-amber-900 transition hover:bg-amber-100 cursor-pointer"
+                                    aria-label="Copy account number"
+                                  >
+                                    <FiCopy size={13} />
+                                    {paymentDetailsCopied ? "Copied" : "Copy account number"}
+                                  </button>
+                                </div>
+                              )}
+                              {paymentDetails && (
+                                <p className="whitespace-pre-line pt-1 text-[11px]">
+                                  {paymentDetails}
+                                </p>
+                              )}
+                            </div>
+                            {!paymentAccountNumber && <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCopyPaymentDetails();
+                              }}
+                              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-2.5 py-2 text-[11px] font-bold text-amber-900 transition hover:bg-amber-100 cursor-pointer"
+                              aria-label="Copy payment account number"
+                            >
+                              <FiCopy size={13} />
+                              {paymentDetailsCopied ? "Copied" : "Copy"}
+                            </button>
+                            }
                           </div>
                         )}
 
@@ -865,11 +993,12 @@ export default function CheckoutPage() {
             </div>
 
             {/* Complete Order Submit Button */}
-            <div className="pt-4">
+            <div className="pt-8 pb-20 sm:pt-4 sm:pb-4">
               <button
                 type="submit"
+                id="checkout-submit-button"
                 disabled={isSubmitting}
-                className="w-full bg-[#333333] hover:bg-black text-white text-sm font-bold tracking-widest uppercase py-4 !rounded-none transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
+                className="checkout-submit-button w-full rounded-xl bg-blue-600 py-4 text-sm font-medium uppercase tracking-widest text-white shadow-md transition-all duration-200 hover:bg-blue-700 hover:shadow-lg active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
@@ -885,7 +1014,7 @@ export default function CheckoutPage() {
         </div>
 
         {/* RIGHT COLUMN: Cart Items, Coupon Input & Summary */}
-        <div className="lg:col-span-5 bg-[#F9FAFB] lg:border-l border-gray-200 py-8 px-4 sm:px-6 lg:px-8 space-y-6 order-1 lg:order-2">
+        <div className="order-1 space-y-6 border-b border-gray-200 bg-white px-4 py-7 sm:px-10 lg:sticky lg:top-0 lg:order-2 lg:min-h-screen lg:border-b-0 lg:border-l lg:px-10 lg:py-12">
           {/* Cart Items List */}
           <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1">
             {items.map((item) => (
@@ -922,7 +1051,7 @@ export default function CheckoutPage() {
           </div>
 
           {/* Discount Code Input Box */}
-          <form onSubmit={handleApplyCoupon} className="pt-2">
+          <form onSubmit={handleApplyCoupon} className="border-t border-gray-200 pt-5">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -940,8 +1069,9 @@ export default function CheckoutPage() {
               />
               <button
                 type="submit"
+                id="coupon-apply-button"
                 disabled={isApplyingCoupon}
-                className="px-5 py-3 rounded-xl bg-[#E5E5E5] hover:bg-black hover:text-white text-gray-800 text-sm font-semibold transition-all duration-200 cursor-pointer disabled:opacity-50"
+                className="px-5 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold transition-all duration-200 cursor-pointer disabled:opacity-50"
               >
                 {isApplyingCoupon ? "..." : "Apply"}
               </button>
@@ -955,7 +1085,7 @@ export default function CheckoutPage() {
 
           {/* Applied Coupon Badge */}
           {appliedCoupon && (
-            <div className="flex items-center justify-between bg-emerald-50 text-emerald-800 px-4 py-2.5 rounded-xl text-xs font-semibold border border-emerald-200 animate-in fade-in">
+            <div className="flex items-center justify-between border-y border-emerald-200 bg-emerald-50/70 px-1 py-2.5 text-xs font-semibold text-emerald-800 animate-in fade-in">
               <span className="flex items-center gap-2">
                 <FiTag className="text-emerald-600" size={14} />
                 <span>
@@ -984,7 +1114,7 @@ export default function CheckoutPage() {
             </div>
 
             <div className="flex justify-between text-gray-600 font-medium">
-              <span>Shipping</span>
+              <span>Delivery</span>
               <span className="text-gray-900 font-semibold">
                 {deliveryData.enabled && deliveryData.amount > 0
                   ? `PKR ${deliveryData.amount.toLocaleString()}`
@@ -1015,6 +1145,18 @@ export default function CheckoutPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="border-t border-gray-100 bg-white px-4 py-5 text-center text-[11px] font-medium tracking-wide text-gray-400">
+        Powered by{" "}
+        <a
+          href="https://xenzox.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-gray-500 transition-colors hover:text-gray-900 hover:underline"
+        >
+          Xenzox Technologies
+        </a>
       </div>
 
       {/* Success Modal */}

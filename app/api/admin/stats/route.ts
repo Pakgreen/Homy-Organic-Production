@@ -32,11 +32,17 @@ export async function GET(req: NextRequest) {
       User.countDocuments({ role: 'user' }),
       Order.countDocuments(),
       Product.countDocuments(),
-      Order.find({}).select('totalPrice createdAt status'),
+      Order.find({}).select('totalPrice createdAt status isPaid'),
     ]);
 
     const totalRevenue = (orders || []).reduce(
-      (acc, order) => acc + (typeof order?.totalPrice === "number" ? order.totalPrice : 0),
+      (acc, order) =>
+        acc +
+        (order?.status === "delivered" &&
+        order?.isPaid &&
+        typeof order?.totalPrice === "number"
+          ? order.totalPrice
+          : 0),
       0
     );
 
@@ -44,6 +50,7 @@ export async function GET(req: NextRequest) {
     const processingOrders = orders.filter((o) => o.status === 'processing').length;
     const shippedOrders = orders.filter((o) => o.status === 'shipped').length;
     const deliveredOrders = orders.filter((o) => o.status === 'delivered').length;
+    const cancelledOrders = orders.filter((o) => o.status === 'cancelled').length;
 
     // Recent orders
     const recentOrders = await Order.find({})
@@ -60,6 +67,7 @@ export async function GET(req: NextRequest) {
       processingOrders,
       shippedOrders,
       deliveredOrders,
+      cancelledOrders,
       recentOrders,
     });
   } catch (error: any) {

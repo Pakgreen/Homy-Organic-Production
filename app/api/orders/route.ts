@@ -7,6 +7,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { buildOrderEmail, sendEmail } from "@/lib/mailer";
 import { hasPermission } from "@/lib/rolePermissions";
+import { sendMetaPurchaseEvent } from "@/lib/metaConversions";
 
 const allowedPaymentMethods = ["Prepaid", "Cash on Delivery"];
 
@@ -45,6 +46,7 @@ const validateOrderPayload = (
   const fullName = sanitizeTrim(shippingAddress?.fullName);
   const address = sanitizeTrim(shippingAddress?.address);
   const phone = sanitizeTrim(shippingAddress?.phone);
+  const alternatePhone = sanitizeTrim(shippingAddress?.alternatePhone);
 
   if (!fullName || !/^[A-Za-z\s]{3,60}$/.test(fullName)) {
     return "Full name must be letters/spaces (3-60 chars)";
@@ -57,6 +59,13 @@ const validateOrderPayload = (
   const digitsOnlyPhone = phone.replace(/[^0-9]/g, "");
   if (digitsOnlyPhone.length < 10 || digitsOnlyPhone.length > 15) {
     return "Enter a valid phone number";
+  }
+
+  if (alternatePhone) {
+    const alternateDigits = alternatePhone.replace(/[^0-9]/g, "");
+    if (alternateDigits.length < 6 || alternateDigits.length > 15) {
+      return "Enter a valid alternate phone number";
+    }
   }
 
   if (paymentMethod === "Prepaid") {
@@ -270,8 +279,8 @@ export async function POST(req: NextRequest) {
         fullName: sanitizeTrim(shippingAddress.fullName),
         address: sanitizeTrim(shippingAddress.address),
         phone: shippingAddress.phone,
+        alternatePhone: sanitizeTrim(shippingAddress.alternatePhone) || "",
         city: sanitizeTrim(shippingAddress.city) || "",
-        postalCode: sanitizeTrim(shippingAddress.postalCode) || "",
         country: sanitizeTrim((shippingAddress as any).country) || "",
       },
       paymentMethod,
@@ -309,6 +318,28 @@ export async function POST(req: NextRequest) {
       });
 
     const plainOrder = order.toObject ? order.toObject() : order;
+
+    try {
+      const requestUrl = req.headers.get("origin") || req.headers.get("referer") || undefined;
+      await sendMetaPurchaseEvent({
+        eventId: order._id.toString(),
+        value: computedTotal,
+        contentIds: normalizedOrderItems.map((item: IncomingOrderItem) => item.product),
+        numItems: normalizedOrderItems.reduce(
+          (sum: number, item: IncomingOrderItem) => sum + item.quantity,
+          0,
+        ),
+        email: recipientEmail,
+        phone: shippingAddress.phone,
+        fbp: req.cookies.get("_fbp")?.value,
+        fbc: req.cookies.get("_fbc")?.value,
+        clientIpAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
+        clientUserAgent: req.headers.get("user-agent") || undefined,
+        eventSourceUrl: requestUrl,
+      });
+    } catch (metaError) {
+      console.error("Meta Conversions API Purchase error:", metaError);
+    }
 
     return NextResponse.json(
       { ...plainOrder, emailSent: false },

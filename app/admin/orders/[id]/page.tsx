@@ -57,7 +57,7 @@ export default function AdminOrderDetailPage() {
       setOrder(data);
       setStatus(data.status);
       setTrackingNumber(data.trackingNumber || "");
-      setIsPaid(data.isPaid);
+      setIsPaid(data.isPaid && data.status === ORDER_STATUS.DELIVERED);
 
       const refFallback =
         data.paymentReference ||
@@ -229,6 +229,15 @@ export default function AdminOrderDetailPage() {
                 <p className="text-xs text-gray-400 font-medium">Payment Method</p>
                 <p className="font-semibold text-gray-900 uppercase">{order.paymentMethod || "JazzCash"}</p>
               </div>
+
+              {order.shippingAddress?.alternatePhone && (
+                <div className="space-y-1">
+                  <p className="text-xs text-gray-400 font-medium">Alternate Phone</p>
+                  <p className="font-semibold text-gray-900">
+                    {order.shippingAddress.alternatePhone}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -309,7 +318,7 @@ export default function AdminOrderDetailPage() {
 
               <button
                 onClick={() => {
-                  const details = `${order.shippingAddress?.fullName}\n${order.shippingAddress?.address}\n${order.shippingAddress?.city}, ${order.shippingAddress?.postalCode}\nPhone: ${order.shippingAddress?.phone}`;
+                  const details = `${order.shippingAddress?.fullName}\n${order.shippingAddress?.address}\n${order.shippingAddress?.city}\nPhone: ${order.shippingAddress?.phone}`;
                   navigator.clipboard.writeText(details);
                   toast.success("Full shipping address copied!");
                 }}
@@ -322,7 +331,7 @@ export default function AdminOrderDetailPage() {
             <div className="text-xs sm:text-sm space-y-1.5 text-gray-700">
               <p className="font-bold text-gray-900 text-base">{order.shippingAddress?.fullName}</p>
               <p className="leading-relaxed">{order.shippingAddress?.address}</p>
-              <p className="font-medium text-gray-800">{order.shippingAddress?.city} {order.shippingAddress?.postalCode}</p>
+              <p className="font-medium text-gray-800">{order.shippingAddress?.city}</p>
               <p className="text-gray-500 pt-1 font-mono">Phone: {order.shippingAddress?.phone}</p>
             </div>
           </div>
@@ -379,7 +388,13 @@ export default function AdminOrderDetailPage() {
                 </label>
                 <select
                   value={status}
-                  onChange={(e) => setStatus(e.target.value)}
+                  onChange={(e) => {
+                    const nextStatus = e.target.value;
+                    setStatus(nextStatus);
+                    if (nextStatus === ORDER_STATUS.CANCELLED) {
+                      setIsPaid(false);
+                    }
+                  }}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 bg-white focus:outline-none focus:border-black transition-colors"
                 >
                   <option value={ORDER_STATUS.PENDING}>Pending</option>
@@ -408,13 +423,19 @@ export default function AdminOrderDetailPage() {
                   <input
                     type="checkbox"
                     checked={isPaid}
+                    disabled={status !== ORDER_STATUS.DELIVERED}
                     onChange={(e) => setIsPaid(e.target.checked)}
-                    className="w-4 h-4 rounded text-black focus:ring-0 cursor-pointer"
+                    className="w-4 h-4 rounded text-black focus:ring-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                   />
                   <span className="text-xs font-bold text-gray-800 uppercase tracking-wider group-hover:text-black">
                     Mark Order as Paid
                   </span>
                 </label>
+                {status !== ORDER_STATUS.DELIVERED && (
+                  <p className="mt-2 text-[11px] text-gray-500">
+                    Payment can only be added after the order is delivered.
+                  </p>
+                )}
               </div>
 
               <button
