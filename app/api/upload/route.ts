@@ -18,9 +18,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate file type
-    if (!file.type.startsWith("image/")) {
+    const isImage = file.type.startsWith("image/");
+    const isVideo = file.type.startsWith("video/");
+    if (!isImage && !isVideo) {
       return NextResponse.json(
-        { error: "Only image files are allowed" },
+        { error: "Only image and video files are allowed" },
         { status: 400 },
       );
     }
@@ -28,7 +30,9 @@ export async function POST(req: NextRequest) {
     // Validate file size (max 20MB)
     if (file.size > 20 * 1024 * 1024) {
       return NextResponse.json(
-        { error: "Image size exceeds 20MB limit! Please select a smaller file." },
+        {
+          error: `${isVideo ? "Video" : "Image"} size exceeds 20MB limit! Please select a smaller file.`,
+        },
         { status: 400 },
       );
     }
@@ -49,7 +53,10 @@ export async function POST(req: NextRequest) {
       resource_type: "auto",
     });
 
-    console.log("✅ Image uploaded successfully:", uploadResponse.secure_url);
+    console.log(
+      `✅ ${isVideo ? "Video" : "Image"} uploaded successfully:`,
+      uploadResponse.secure_url,
+    );
 
     return NextResponse.json({
       success: true,

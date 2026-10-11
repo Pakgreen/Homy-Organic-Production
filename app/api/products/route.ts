@@ -229,6 +229,23 @@ export async function POST(req: NextRequest) {
     if (data.naturalIngredients !== undefined) {
       data.naturalIngredients = normalizeStringArray(data.naturalIngredients);
     }
+    if (data.contentSections !== undefined) {
+      data.contentSections = Array.isArray(data.contentSections)
+        ? data.contentSections
+            .map((section: any) => ({
+              title: typeof section?.title === "string" ? section.title.trim() : "",
+              description:
+                typeof section?.description === "string"
+                  ? section.description.trim()
+                  : "",
+              image: typeof section?.image === "string" ? section.image.trim() : "",
+            }))
+            .filter(
+              (section: any) =>
+                section.title || section.description || section.image,
+            )
+        : [];
+    }
 
     // Separate Value Packs from Category: Value Packs do not require or use Category
     if (data.isValuePack) {

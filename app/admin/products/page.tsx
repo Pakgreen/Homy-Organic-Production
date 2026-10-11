@@ -17,6 +17,8 @@ export default function AdminProductsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [uploadingSectionIndex, setUploadingSectionIndex] = useState<number | null>(null);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   
   // Delete Popup Modal States
   const [deletingProduct, setDeletingProduct] = useState<any | null>(null);
@@ -72,6 +74,7 @@ export default function AdminProductsPage() {
     isDisabled: boolean;
     isValuePack: boolean;
     whichIncluded: Array<{ name: string; quantity: number; price: number | "" }>;
+    contentSections: Array<{ title: string; description: string; image: string }>;
     keyBenefits: string;
     naturalIngredients: string;
     howToUse: string;
@@ -100,6 +103,7 @@ export default function AdminProductsPage() {
     isDisabled: false,
     isValuePack: false,
     whichIncluded: [{ name: "", quantity: 1, price: "" }],
+    contentSections: [],
     keyBenefits: "",
     naturalIngredients: "",
     howToUse: "",
@@ -267,6 +271,13 @@ export default function AdminProductsPage() {
           quantity: Number(item.quantity) > 0 ? Number(item.quantity) : 1,
           price: item.price !== "" ? Number(item.price) : undefined,
         })),
+      contentSections: formData.contentSections
+        .map((section) => ({
+          title: section.title.trim(),
+          description: section.description.trim(),
+          image: section.image.trim(),
+        }))
+        .filter((section) => section.title || section.description || section.image),
     };
 
     try {
@@ -396,6 +407,13 @@ export default function AdminProductsPage() {
               price: typeof item?.price === "number" ? item.price : "",
             }))
           : [{ name: "", quantity: 1, price: "" }],
+      contentSections: Array.isArray(product.contentSections)
+        ? product.contentSections.map((section: any) => ({
+            title: section.title || "",
+            description: section.description || "",
+            image: section.image || "",
+          }))
+        : [],
       keyBenefits: Array.isArray(product.keyBenefits)
         ? product.keyBenefits.join("\n")
         : product.keyBenefits || "",
@@ -433,6 +451,7 @@ export default function AdminProductsPage() {
       isDisabled: false,
       isValuePack: false,
       whichIncluded: [{ name: "", quantity: 1, price: "" }],
+      contentSections: [],
       keyBenefits: "",
       naturalIngredients: "",
       howToUse: "",
@@ -472,21 +491,24 @@ export default function AdminProductsPage() {
           if (!ctx) return resolve(file);
 
           ctx.drawImage(img, 0, 0, width, height);
+          const preservesTransparency = file.type === "image/png";
+          const outputType = preservesTransparency ? "image/png" : "image/jpeg";
+          const outputExtension = preservesTransparency ? ".png" : ".jpg";
           canvas.toBlob(
             (blob) => {
               if (blob) {
                 const compressedFile = new File(
                   [blob],
-                  file.name.replace(/\.[^/.]+$/, ".jpg"),
-                  { type: "image/jpeg", lastModified: Date.now() }
+                  file.name.replace(/\.[^/.]+$/, outputExtension),
+                  { type: outputType, lastModified: Date.now() }
                 );
                 resolve(compressedFile);
               } else {
                 resolve(file);
               }
             },
-            "image/jpeg",
-            0.88
+            outputType,
+            preservesTransparency ? undefined : 0.88
           );
         };
         img.onerror = () => resolve(file);
@@ -559,6 +581,74 @@ export default function AdminProductsPage() {
       toast.error(error.response?.data?.error || "Failed to upload image(s)");
     } finally {
       setIsUploadingImages(false);
+    }
+  };
+
+  const handleContentSectionImageUpload = async (
+    index: number,
+    file: File | undefined,
+  ) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    setUploadingSectionIndex(index);
+    try {
+      const compressedFile = await compressImageIfNeeded(file);
+      const payload = new FormData();
+      payload.append("file", compressedFile);
+      const res = await axios.post("/api/upload", payload, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (!res.data?.url) {
+        throw new Error("Upload did not return an image URL");
+      }
+      setFormData((prev) => ({
+        ...prev,
+        contentSections: prev.contentSections.map((section, sectionIndex) =>
+          sectionIndex === index ? { ...section, image: res.data.url } : section,
+        ),
+      }));
+      toast.success("Section image uploaded");
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Failed to upload section image");
+    } finally {
+      setUploadingSectionIndex(null);
+    }
+  };
+
+  const handleVideoUpload = async (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith("video/")) {
+      toast.error("Please select a video file");
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("Video size exceeds 20MB limit. Please select a smaller video.");
+      return;
+    }
+
+    setIsUploadingVideo(true);
+    try {
+      const payload = new FormData();
+      payload.append("file", file);
+      const res = await axios.post("/api/upload", payload, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (!res.data?.url) {
+        throw new Error("Upload did not return a video URL");
+      }
+      setFormData((prev) => ({
+        ...prev,
+        videos: [...(prev.videos || []), res.data.url],
+      }));
+      toast.success("Video uploaded");
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Failed to upload video");
+    } finally {
+      setIsUploadingVideo(false);
     }
   };
 
@@ -1330,6 +1420,120 @@ export default function AdminProductsPage() {
                 ))}
               </div>
 
+              {/* Product Content Sections */}
+              <div className="border-t border-gray-100 pt-6 space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-[#B9853A]">
+                      Product Content Sections
+                    </p>
+                    <p className="mt-1 text-[11px] text-gray-500">
+                      These sections are shown on the product page in alternating image/text order.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        contentSections: [
+                          ...prev.contentSections,
+                          { title: "", description: "", image: "" },
+                        ],
+                      }))
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-800"
+                  >
+                    <FiPlus size={14} /> Add Section
+                  </button>
+                </div>
+
+                {formData.contentSections.map((section, index) => (
+                  <div
+                    key={index}
+                    className="grid grid-cols-1 gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3 md:grid-cols-12"
+                  >
+                    <input
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs md:col-span-3"
+                      placeholder="Section title"
+                      value={section.title}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          contentSections: prev.contentSections.map((item, i) =>
+                            i === index ? { ...item, title: e.target.value } : item,
+                          ),
+                        }))
+                      }
+                    />
+                    <textarea
+                      rows={2}
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs md:col-span-4"
+                      placeholder="Section description"
+                      value={section.description}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          contentSections: prev.contentSections.map((item, i) =>
+                            i === index
+                              ? { ...item, description: e.target.value }
+                              : item,
+                          ),
+                        }))
+                      }
+                    />
+                    <input
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs md:col-span-3"
+                      placeholder="Or paste image URL"
+                      value={section.image}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          contentSections: prev.contentSections.map((item, i) =>
+                            i === index ? { ...item, image: e.target.value } : item,
+                          ),
+                        }))
+                      }
+                    />
+                    <label className={`inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 md:col-span-1 ${
+                      uploadingSectionIndex === index
+                        ? "cursor-wait opacity-60"
+                        : "cursor-pointer hover:border-gray-500"
+                    }`}>
+                      {uploadingSectionIndex === index ? (
+                        <FiLoader className="animate-spin" size={14} />
+                      ) : (
+                        "Upload"
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={uploadingSectionIndex !== null}
+                        onChange={(e) =>
+                          handleContentSectionImageUpload(index, e.target.files?.[0])
+                        }
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          contentSections: prev.contentSections.filter(
+                            (_, i) => i !== index,
+                          ),
+                        }))
+                      }
+                      className="justify-self-end self-start p-2 text-gray-400 hover:text-rose-600 md:col-span-1"
+                      aria-label={`Remove section ${index + 1}`}
+                    >
+                      <FiTrash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
               {/* Standard Organic Highlights */}
               <div className="border-t border-gray-100 pt-6 space-y-6">
                 <p className="text-xs font-bold text-[#B9853A] uppercase tracking-wider">
@@ -1488,21 +1692,39 @@ export default function AdminProductsPage() {
                       Product Videos
                     </label>
                     <p className="text-xs text-gray-500 mt-1">
-                      Add one or more Cloudinary video URLs. Each URL will render on the product page.
+                      Add Cloudinary video URLs or upload video files. Existing videos will stay saved.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        videos: [...(prev.videos || []), ""],
-                      }))
-                    }
-                    className="inline-flex items-center gap-1.5 rounded-full bg-[#B9853A] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#9a6d2f] cursor-pointer"
-                  >
-                    <FiPlus size={14} /> Add Video URL
-                  </button>
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          videos: [...(prev.videos || []), ""],
+                        }))
+                      }
+                      className="inline-flex items-center gap-1.5 rounded-full bg-[#B9853A] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#9a6d2f] cursor-pointer"
+                    >
+                      <FiPlus size={14} /> Add Video URL
+                    </button>
+                    <label className={`inline-flex items-center gap-1.5 rounded-full border border-[#B9853A] bg-white px-3 py-2 text-xs font-bold text-[#9a6d2f] ${
+                      isUploadingVideo ? "cursor-wait opacity-60" : "cursor-pointer"
+                    }`}>
+                      {isUploadingVideo ? (
+                        <FiLoader className="animate-spin" size={14} />
+                      ) : (
+                        "Upload Video"
+                      )}
+                      <input
+                        type="file"
+                        accept="video/*"
+                        className="hidden"
+                        disabled={isUploadingVideo}
+                        onChange={(e) => handleVideoUpload(e.target.files?.[0])}
+                      />
+                    </label>
+                  </div>
                 </div>
 
                 {(formData.videos || []).length > 0 && (

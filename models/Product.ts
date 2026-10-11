@@ -24,6 +24,12 @@ export interface IProductIncludedItem {
   price?: number;
 }
 
+export interface IProductContentSection {
+  title: string;
+  description: string;
+  image: string;
+}
+
 export interface IProduct extends Document {
   name: string;
   slug: string;
@@ -56,6 +62,7 @@ export interface IProduct extends Document {
   badge?: string;
   subTitle?: string;
   whichIncluded?: IProductIncludedItem[];
+  contentSections?: IProductContentSection[];
   inStock?: boolean;
   stock?: number;
   weight?: string;
@@ -201,6 +208,16 @@ const ProductSchema: Schema = new Schema(
     },
     whichIncluded: {
       type: [Schema.Types.Mixed],
+      default: [],
+    },
+    contentSections: {
+      type: [
+        {
+          title: { type: String, default: "", trim: true },
+          description: { type: String, default: "" },
+          image: { type: String, default: "", trim: true },
+        },
+      ],
       default: [],
     },
   },

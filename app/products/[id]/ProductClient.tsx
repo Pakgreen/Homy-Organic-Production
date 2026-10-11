@@ -251,13 +251,6 @@ export default function ProductClient({
     return [];
   }, [product?.videos, product?.video]);
 
-  const isGlassGlowProduct =
-    typeof product?.slug === "string"
-      ? product.slug ===
-        "glass-glow-face-pack-premium-ubtan-3-in-1-cleanser-scrub-mask"
-      : typeof product?.name === "string" &&
-        product.name.toLowerCase().includes("glass glow face pack");
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (activeVideoIndex === null) return;
@@ -1021,7 +1014,7 @@ export default function ProductClient({
               <div className="w-full space-y-2.5 pt-2">
                 <div className="flex items-center gap-3">
                   <span className="h-px flex-1 bg-stone-200" />
-                  <h2 className="whitespace-nowrap text-xs font-extrabold uppercase tracking-wider text-stone-700">
+                  <h2 className="whitespace-nowrap rounded-full bg-orange-100 px-3 py-1 text-base font-black uppercase tracking-wider text-orange-800 shadow-sm sm:text-lg">
                     Buy More, Save More
                   </h2>
                   <span className="h-px flex-1 bg-stone-200" />
@@ -1061,7 +1054,7 @@ export default function ProductClient({
                     const displayLabel = offer.label
                       ? offer.label.toLowerCase().includes("pack")
                         ? `Buy ${qty}`
-                        : offer.label
+                        : offer.label.replace(/\s*pieces?\b/gi, "").trim()
                       : `Buy ${qty}`;
 
                     const isBestValue = offer.isPopular || idx >= 2;
@@ -1073,7 +1066,7 @@ export default function ProductClient({
                         onClick={() =>
                           setSelectedOffer(offer.packQuantity === 1 ? null : offer)
                         }
-                        className={`relative flex w-full cursor-pointer items-center justify-between rounded-xl border p-3.5 text-left transition-all ${
+                        className={`relative flex w-full cursor-pointer items-center justify-between rounded-xl border p-2.5 text-left transition-all sm:p-3 ${
                           isSelected
                             ? "border-black bg-white shadow-2xs"
                             : "border-stone-300 bg-white hover:border-stone-400"
@@ -1099,13 +1092,19 @@ export default function ProductClient({
                           </span>
 
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-sm sm:text-base font-bold text-stone-900">
+                            <span className="text-base font-extrabold text-stone-900">
                               {displayLabel}
                             </span>
 
                             {/* Save % badge */}
                             {savePercent > 0 && (
-                              <span className="inline-flex items-center rounded bg-stone-200 px-2 py-0.5 text-[11px] font-semibold text-stone-800">
+                              <span
+                                className="inline-flex items-center rounded-full border border-white/30 bg-gradient-to-r from-[#EA6925] to-[#E55353] px-2.5 py-0.5 text-[11px] font-extrabold tracking-tight text-white shadow-xs"
+                                style={{
+                                  fontFamily: "var(--font-syne), 'Syne', sans-serif",
+                                  fontStyle: "italic",
+                                }}
+                              >
                                 Save {savePercent}%
                               </span>
                             )}
@@ -1119,17 +1118,6 @@ export default function ProductClient({
                           </div>
                         </div>
 
-                        {/* Right Side: Price + Strikethrough Price */}
-                        <div className="shrink-0 pl-3 text-right">
-                          <span className="block text-sm sm:text-base font-bold text-stone-900">
-                            {formatPrice(offer.price)}
-                          </span>
-                          {offerOriginalPrice > offer.price && (
-                            <span className="block text-[11px] font-normal text-stone-400 line-through">
-                              {formatPrice(offerOriginalPrice)}
-                            </span>
-                          )}
-                        </div>
                       </button>
                     );
                   })}
@@ -1346,9 +1334,42 @@ export default function ProductClient({
           </div>
         </div>
 
-        {isGlassGlowProduct && (
+        {Array.isArray(product?.contentSections) &&
+          product.contentSections.length > 0 && (
           <div className="w-full divide-y divide-stone-200 border-y border-stone-200">
-            <div className="grid grid-cols-1 items-center gap-5 py-6 sm:grid-cols-[minmax(180px,280px)_1fr] sm:gap-8">
+            {product.contentSections.map((section: any, index: number) => (
+              <div
+                key={`${section.title || "section"}-${index}`}
+                className="space-y-4 py-6"
+              >
+                {section.title && (
+                  <h3 className="text-base font-semibold text-stone-900 sm:text-lg">
+                    {section.title}
+                  </h3>
+                )}
+                {section.image && (
+                  <Image
+                    src={section.image}
+                    alt={section.title || product.name}
+                    width={1200}
+                    height={800}
+                    sizes="(max-width: 640px) 100vw, 280px"
+                    className="h-auto w-full object-contain"
+                  />
+                )}
+                {section.description && (
+                  <p className="whitespace-pre-line text-sm leading-relaxed text-stone-800">
+                    {section.description}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {false && (
+          <div className="w-full divide-y divide-stone-200 border-y border-stone-200">
+            <div className="grid grid-cols-1 gap-5 py-6">
               <Image
                 src="https://res.cloudinary.com/qmgjj5vu/image/upload/v1791657985/Organic_Powder_Kraft_Pouch_with_Wooden_Spoon_zsq1st.png"
                 alt="Glass Glow Face Pack by Homy Organic"
@@ -1368,7 +1389,7 @@ export default function ProductClient({
               </p>
             </div>
 
-            <div className="grid grid-cols-1 items-center gap-5 py-6 sm:grid-cols-[1fr_minmax(180px,280px)] sm:gap-8">
+            <div className="grid grid-cols-1 gap-5 py-6">
               <div className="text-sm leading-relaxed text-stone-800">
                 <h3 className="mb-2 text-base font-semibold text-stone-900 sm:text-lg">
                   14+ Traditional Ingredients &amp; Herbs
@@ -1389,15 +1410,7 @@ export default function ProductClient({
               />
             </div>
 
-            <div className="grid grid-cols-1 items-center gap-5 py-6 sm:grid-cols-[minmax(180px,280px)_1fr] sm:gap-8">
-              <Image
-                src="https://res.cloudinary.com/qmgjj5vu/image/upload/v1791658278/Glass_Skin_Glow_Skincare_Ad_z0pgoe.png"
-                alt="Fresh glass-skin glow in a 20-minute ritual"
-                width={1200}
-                height={800}
-                sizes="(max-width: 640px) 100vw, 280px"
-                className="h-auto w-full object-contain"
-              />
+            <div className="grid grid-cols-1 gap-5 py-6">
               <div className="text-sm leading-relaxed text-stone-800">
                 <h3 className="mb-2 text-base font-semibold text-stone-900 sm:text-lg">
                   3. Fresh, Glass-Skin Glow in a 20-Minute Ritual
@@ -1413,9 +1426,17 @@ export default function ProductClient({
                   glow without changing your natural skin tone.
                 </p>
               </div>
+              <Image
+                src="https://res.cloudinary.com/qmgjj5vu/image/upload/v1791658278/Glass_Skin_Glow_Skincare_Ad_z0pgoe.png"
+                alt="Fresh glass-skin glow in a 20-minute ritual"
+                width={1200}
+                height={800}
+                sizes="(max-width: 640px) 100vw, 280px"
+                className="h-auto w-full object-contain"
+              />
             </div>
 
-            <div className="grid grid-cols-1 items-center gap-5 py-6 sm:grid-cols-[1fr_minmax(180px,280px)] sm:gap-8">
+            <div className="grid grid-cols-1 gap-5 py-6">
               <div className="text-sm leading-relaxed text-stone-800">
                 <h3 className="mb-2 text-base font-semibold text-stone-900 sm:text-lg">
                   4. Brides &amp; Grooms: Start Your Glow Routine Early
@@ -1435,15 +1456,7 @@ export default function ProductClient({
               />
             </div>
 
-            <div className="grid grid-cols-1 items-center gap-5 py-6 sm:grid-cols-[minmax(180px,280px)_1fr] sm:gap-8">
-              <Image
-                src="https://res.cloudinary.com/qmgjj5vu/image/upload/v1791656811/Natural_Skincare_Ritual_Collage_yvtn1n.png"
-                alt="Natural skincare ritual for face, hands and body"
-                width={1200}
-                height={800}
-                sizes="(max-width: 640px) 100vw, 280px"
-                className="h-auto w-full object-contain"
-              />
+            <div className="grid grid-cols-1 gap-5 py-6">
               <div className="text-sm leading-relaxed text-stone-800">
                 <h3 className="mb-2 text-base font-semibold text-stone-900 sm:text-lg">
                   5. For Face, Hands &amp; Body
@@ -1452,7 +1465,16 @@ export default function ProductClient({
                   Glass Glow Face Pack can be used on the face, hands and body.
                 </p>
               </div>
+              <Image
+                src="https://res.cloudinary.com/qmgjj5vu/image/upload/v1791656811/Natural_Skincare_Ritual_Collage_yvtn1n.png"
+                alt="Natural skincare ritual for face, hands and body"
+                width={1200}
+                height={800}
+                sizes="(max-width: 640px) 100vw, 280px"
+                className="h-auto w-full object-contain"
+              />
             </div>
+
           </div>
         )}
 
