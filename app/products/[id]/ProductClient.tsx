@@ -1057,7 +1057,7 @@ export default function ProductClient({
                         : offer.label.replace(/\s*pieces?\b/gi, "").trim()
                       : `Buy ${qty}`;
 
-                    const isBestValue = offer.isPopular || idx >= 2;
+                    const isPopularOffer = offer.isPopular === true;
 
                     return (
                       <button
@@ -1073,9 +1073,9 @@ export default function ProductClient({
                         }`}
                       >
                         {/* Top-right Best value badge */}
-                        {isBestValue && (
+                        {isPopularOffer && (
                           <span className="absolute -top-2.5 right-3 rounded bg-stone-900 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
-                            Best value
+                            Most popular
                           </span>
                         )}
 
