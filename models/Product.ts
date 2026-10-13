@@ -16,6 +16,7 @@ export interface IProductOffer {
   gift?: string;
   freeShipping?: boolean;
   isPopular?: boolean;
+  isBestValue?: boolean;
 }
 
 export interface IProductIncludedItem {
@@ -40,6 +41,7 @@ export interface IProduct extends Document {
   images: string[];
   imageLabels?: string[];
   videos?: string[];
+  videoThumbnailTimes?: number[];
   sizes?: IProductSize[];
   offers?: IProductOffer[];
   brand?: string;
@@ -113,6 +115,10 @@ const ProductSchema: Schema = new Schema(
       type: [String],
       default: [],
     },
+    videoThumbnailTimes: {
+      type: [Number],
+      default: [],
+    },
     sizes: {
       type: [
         {
@@ -134,6 +140,7 @@ const ProductSchema: Schema = new Schema(
           gift: { type: String, default: "", trim: true },
           freeShipping: { type: Boolean, default: false },
           isPopular: { type: Boolean, default: false },
+          isBestValue: { type: Boolean, default: false },
         },
       ],
       default: [],
@@ -230,7 +237,6 @@ const ProductSchema: Schema = new Schema(
 ProductSchema.index({ isDisabled: 1, isBestSeller: 1, order: 1 });
 ProductSchema.index({ isDisabled: 1, isValuePack: 1, order: 1 });
 ProductSchema.index({ isDisabled: 1, order: 1 });
-ProductSchema.index({ slug: 1 });
 
 if (mongoose.models && mongoose.models.Product) {
   delete (mongoose.models as any).Product;

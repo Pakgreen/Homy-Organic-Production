@@ -251,6 +251,10 @@ export default function ProductClient({
     return [];
   }, [product?.videos, product?.video]);
 
+  const productVideoThumbnailTimes: number[] = Array.isArray(product?.videoThumbnailTimes)
+    ? product.videoThumbnailTimes.map((time: any) => Number(time) || 0)
+    : [];
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (activeVideoIndex === null) return;
@@ -975,8 +979,8 @@ export default function ProductClient({
             {/* Product Weight & Shipping */}
             <div className="flex flex-wrap items-center gap-3 text-xs text-stone-600">
               {product.weight && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D85A24] bg-[#E8662D] px-2.5 py-1 text-[11px] font-bold tracking-wide text-white shadow-sm">
-                  Weight: <span className="font-semibold text-white">{product.weight}</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-black bg-black px-2.5 py-1 text-[11px] font-bold tracking-wide text-white shadow-sm">
+                  <span className="font-semibold text-white">{product.weight}</span>
                 </span>
               )}
               {product.weight && <span className="text-stone-300">•</span>}
@@ -1014,7 +1018,7 @@ export default function ProductClient({
               <div className="w-full space-y-2.5 pt-2">
                 <div className="flex items-center gap-3">
                   <span className="h-px flex-1 bg-stone-200" />
-                  <h2 className="whitespace-nowrap rounded-full border border-[#D85A24] bg-[#E8662D] px-3 py-1 text-base font-black uppercase tracking-wider !text-white shadow-sm sm:text-lg">
+                  <h2 className="whitespace-nowrap rounded-full border border-black bg-black px-3 py-1 text-base font-black uppercase tracking-wider !text-white shadow-sm sm:text-lg">
                     Buy More, Save More
                   </h2>
                   <span className="h-px flex-1 bg-stone-200" />
@@ -1058,6 +1062,7 @@ export default function ProductClient({
                       : `Buy ${qty}`;
 
                     const isPopularOffer = offer.isPopular === true;
+                    const isBestValueOffer = offer.isBestValue === true;
 
                     return (
                       <button
@@ -1073,9 +1078,9 @@ export default function ProductClient({
                         }`}
                       >
                         {/* Top-right Best value badge */}
-                        {isPopularOffer && (
-                          <span className="absolute -top-2.5 right-3 rounded bg-stone-900 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
-                            Most popular
+                        {(isPopularOffer || isBestValueOffer) && (
+                          <span className="absolute -top-2.5 right-3 !rounded-full border border-white/30 bg-gradient-to-r from-[#EA6925] to-[#E55353] px-2 py-0.5 text-[10px] font-extrabold text-white uppercase tracking-wider shadow-xs">
+                            {isBestValueOffer ? "Best value" : "Most popular"}
                           </span>
                         )}
 
@@ -1099,7 +1104,7 @@ export default function ProductClient({
                             {/* Save % badge */}
                             {savePercent > 0 && (
                               <span
-                                className="inline-flex items-center rounded-full border border-white/30 bg-gradient-to-r from-[#EA6925] to-[#E55353] px-2.5 py-0.5 text-[11px] font-extrabold tracking-tight text-white shadow-xs"
+                                className="inline-flex items-center rounded-full border border-black bg-black px-2.5 py-0.5 text-[11px] font-extrabold tracking-tight text-white shadow-xs"
                                 style={{
                                   fontFamily: "var(--font-syne), 'Syne', sans-serif",
                                   fontStyle: "italic",
@@ -1117,6 +1122,10 @@ export default function ProductClient({
                             )}
                           </div>
                         </div>
+
+                        <span className="ml-3 shrink-0 text-sm font-extrabold text-stone-900 sm:text-base">
+                          {formatPrice(offer.price)}
+                        </span>
 
                       </button>
                     );
@@ -1240,7 +1249,7 @@ export default function ProductClient({
                 } ${
                   isOutOfStock
                     ? "bg-stone-200 text-stone-400 cursor-not-allowed"
-                    : "border-2 border-[#D85A24] bg-[#E8662D] text-white hover:bg-[#D85A24] active:scale-[0.99] cursor-pointer"
+                    : "border-2 border-black bg-black text-white hover:bg-stone-800 active:scale-[0.99] cursor-pointer"
                 }`}
               >
                 {!isOutOfStock && <span className="buy-now-shine" aria-hidden="true" />}
@@ -1340,7 +1349,7 @@ export default function ProductClient({
             {product.contentSections.map((section: any, index: number) => (
               <div
                 key={`${section.title || "section"}-${index}`}
-                className="mx-auto w-full max-w-5xl space-y-4 py-7 sm:py-8"
+                className="mx-auto w-full max-w-5xl space-y-4 px-4 py-7 sm:px-6 sm:py-8"
               >
                 {section.title && (
                   <h3 className="text-base font-semibold text-stone-900 sm:text-lg">
@@ -1353,8 +1362,8 @@ export default function ProductClient({
                     alt={section.title || product.name}
                     width={1200}
                     height={800}
-                    sizes="(max-width: 640px) 100vw, 280px"
-                    className="h-auto w-full object-contain"
+                    sizes="(max-width: 640px) 92vw, (max-width: 1024px) 620px, 720px"
+                    className="mx-auto h-auto w-full max-w-115 object-contain sm:max-w-155 lg:max-w-180"
                   />
                 )}
                 {section.description && (
@@ -1905,7 +1914,7 @@ export default function ProductClient({
                     {/* Desktop: Play directly right here in the grid (No Dialog) */}
                     <video
                       src={getOptimizedVideoUrl(videoUrl)}
-                      poster={getVideoPosterUrl(videoUrl)}
+                      poster={getVideoPosterUrl(videoUrl, productVideoThumbnailTimes[index])}
                       controls
                       playsInline
                       preload="auto"
@@ -1919,7 +1928,7 @@ export default function ProductClient({
                     >
                       <video
                         src={getOptimizedVideoUrl(videoUrl)}
-                        poster={getVideoPosterUrl(videoUrl)}
+                        poster={getVideoPosterUrl(videoUrl, productVideoThumbnailTimes[index])}
                         muted
                         playsInline
                         preload="auto"
@@ -1986,7 +1995,10 @@ export default function ProductClient({
                   ref={dialogVideoRef}
                   key={productVideos[activeVideoIndex]}
                   src={getOptimizedVideoUrl(productVideos[activeVideoIndex])}
-                  poster={getVideoPosterUrl(productVideos[activeVideoIndex])}
+                  poster={getVideoPosterUrl(
+                    productVideos[activeVideoIndex],
+                    productVideoThumbnailTimes[activeVideoIndex],
+                  )}
                   autoPlay
                   controls
                   playsInline

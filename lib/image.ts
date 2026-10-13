@@ -25,7 +25,7 @@ export function getOptimizedImageUrl(
   return src;
 }
 
-export function getVideoPosterUrl(src?: string | null): string | undefined {
+export function getVideoPosterUrl(src?: string | null, thumbnailTime = 0): string | undefined {
   if (!src || typeof src !== "string" || !src.trim()) return undefined;
 
   if (src.includes("res.cloudinary.com") && src.includes("/video/upload/")) {
@@ -38,7 +38,8 @@ export function getVideoPosterUrl(src?: string | null): string | undefined {
     }
 
     const fileName = rest.replace(/\.[^/.]+$/, "");
-    return `${prefix}f_jpg,q_auto,so_0/${fileName}.jpg`;
+    const safeTime = Number.isFinite(thumbnailTime) && thumbnailTime >= 0 ? thumbnailTime : 0;
+    return `${prefix}f_jpg,q_auto,so_${safeTime}/${fileName}.jpg`;
   }
 
   return undefined;

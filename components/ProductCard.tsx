@@ -164,7 +164,7 @@ export default function ProductCard({
           </div>
         ) : null}
 
-        {/* Top-Right Out of Stock / Minimal Discount Tag (Original Orange & Gradient Styling) */}
+        {/* Top-Right Out of Stock / Minimal Discount Tag */}
         {isOutOfStock ? (
           <div
             style={{ borderRadius: "9999px" }}
@@ -274,7 +274,7 @@ export default function ProductCard({
           {/* Prices Side-by-Side */}
           <div className="flex items-baseline gap-1.5 flex-wrap">
             <span
-              className="text-[#E55353] text-sm sm:text-base font-price-syne"
+              className="text-black text-sm sm:text-base font-price-syne"
               style={{
                 fontFamily: "var(--font-lora), 'Lora', serif",
                 fontWeight: 600,

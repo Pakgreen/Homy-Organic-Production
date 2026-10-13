@@ -27,11 +27,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate file size (max 20MB)
-    if (file.size > 20 * 1024 * 1024) {
+    // Keep uploads within a practical limit while allowing product videos.
+    if (file.size > 100 * 1024 * 1024) {
       return NextResponse.json(
         {
-          error: `${isVideo ? "Video" : "Image"} size exceeds 20MB limit! Please select a smaller file.`,
+          error: `${isVideo ? "Video" : "Image"} size exceeds 100MB limit! Please select a smaller file.`,
         },
         { status: 400 },
       );
@@ -40,17 +40,21 @@ export async function POST(req: NextRequest) {
     // Convert file to base64
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const base64 = buffer.toString("base64");
-    const dataURI = `data:${file.type};base64,${base64}`;
-
     // Upload to Cloudinary
-    let uploadResponse;
     const body = formData.get("folder");
     const destFolder = body ? (body as string).trim() : "xenzoxmart";
-
-    uploadResponse = await cloudinary.uploader.upload(dataURI, {
-      folder: destFolder, // Optional: organize images in folder
-      resource_type: "auto",
+    const uploadResponse = await new Promise<any>((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: destFolder,
+          resource_type: isVideo ? "video" : "image",
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        },
+      );
+      uploadStream.end(buffer);
     });
 
     console.log(

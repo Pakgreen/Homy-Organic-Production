@@ -19,6 +19,7 @@ export default function AdminProductsPage() {
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [uploadingSectionIndex, setUploadingSectionIndex] = useState<number | null>(null);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [videoUploadProgress, setVideoUploadProgress] = useState(0);
   
   // Delete Popup Modal States
   const [deletingProduct, setDeletingProduct] = useState<any | null>(null);
@@ -67,8 +68,9 @@ export default function AdminProductsPage() {
     images: string[];
     imageLabels: string[];
     videos: string[];
+    videoThumbnailTimes: Array<number | "">;
     sizes: Array<{ name: string; price: number | ""; originalPrice: number | "" }>;
-    offers: Array<{ label: string; packQuantity: number | ""; price: number | ""; originalPrice: number | ""; savingText: string; gift: string; freeShipping: boolean; isPopular: boolean }>;
+    offers: Array<{ label: string; packQuantity: number | ""; price: number | ""; originalPrice: number | ""; savingText: string; gift: string; freeShipping: boolean; isPopular: boolean; isBestValue: boolean }>;
     isFeatured: boolean;
     isBestSeller: boolean;
     isDisabled: boolean;
@@ -96,6 +98,7 @@ export default function AdminProductsPage() {
     images: [],
     imageLabels: [],
     videos: [],
+    videoThumbnailTimes: [],
     sizes: [],
     offers: [],
     isFeatured: false,
@@ -178,7 +181,7 @@ export default function AdminProductsPage() {
   const handleAddOfferRow = () => {
     setFormData((prev) => ({
       ...prev,
-      offers: [...(prev.offers || []), { label: "", packQuantity: "", price: "", originalPrice: "", savingText: "", gift: "", freeShipping: false, isPopular: false }],
+      offers: [...(prev.offers || []), { label: "", packQuantity: "", price: "", originalPrice: "", savingText: "", gift: "", freeShipping: false, isPopular: false, isBestValue: false }],
     }));
   };
 
@@ -209,6 +212,10 @@ export default function AdminProductsPage() {
     ) {
       return;
     }
+
+    const videoEntries = (formData.videos || [])
+      .map((url, index) => ({ url: url.trim(), index }))
+      .filter((entry) => entry.url.length > 0);
 
     const payload = {
       ...formData,
@@ -242,6 +249,7 @@ export default function AdminProductsPage() {
           gift: offer.gift.trim(),
           freeShipping: offer.freeShipping,
           isPopular: offer.isPopular,
+          isBestValue: offer.isBestValue,
         })),
       imageLabels: formData.images.map((_, index) => {
         const label = formData.imageLabels[index];
@@ -249,9 +257,11 @@ export default function AdminProductsPage() {
           ? label.trim()
           : `Design ${index + 1}`;
       }),
-      videos: (formData.videos || [])
-        .map((url) => url.trim())
-        .filter(Boolean),
+      videos: videoEntries.map((entry) => entry.url),
+      videoThumbnailTimes: videoEntries.map(({ index }) => {
+        const value = Number(formData.videoThumbnailTimes[index]);
+        return Number.isFinite(value) && value >= 0 ? value : 0;
+      }),
       keyBenefits: formData.keyBenefits
         .split("\n")
         .map((s) => s.trim())
@@ -376,6 +386,9 @@ export default function AdminProductsPage() {
               `Design ${index + 1}`,
             ),
           videos: Array.isArray(product.videos) ? product.videos : [],
+          videoThumbnailTimes: Array.isArray(product.videoThumbnailTimes)
+            ? product.videoThumbnailTimes
+            : [],
       sizes: Array.isArray(product.sizes)
         ? product.sizes.map((s: any) => ({
             name: s.name || "",
@@ -393,6 +406,7 @@ export default function AdminProductsPage() {
             gift: offer.gift || "",
             freeShipping: !!offer.freeShipping,
             isPopular: !!offer.isPopular,
+            isBestValue: !!offer.isBestValue,
           }))
         : [],
       isFeatured: product.isFeatured || false,
@@ -444,6 +458,7 @@ export default function AdminProductsPage() {
       images: [],
       imageLabels: [],
       videos: [],
+      videoThumbnailTimes: [],
       sizes: [],
       offers: [],
       isFeatured: false,
@@ -625,30 +640,50 @@ export default function AdminProductsPage() {
       toast.error("Please select a video file");
       return;
     }
-    if (file.size > 20 * 1024 * 1024) {
-      toast.error("Video size exceeds 20MB limit. Please select a smaller video.");
+    if (file.size > 100 * 1024 * 1024) {
+      toast.error("Video size exceeds 100MB limit. Please select a smaller video.");
       return;
     }
 
     setIsUploadingVideo(true);
+    setVideoUploadProgress(0);
     try {
+      const signatureResponse = await axios.get("/api/upload/signature");
+      const { cloudName, apiKey, folder, timestamp, signature } = signatureResponse.data;
       const payload = new FormData();
       payload.append("file", file);
-      const res = await axios.post("/api/upload", payload, {
+      payload.append("api_key", apiKey);
+      payload.append("timestamp", String(timestamp));
+      payload.append("signature", signature);
+      payload.append("folder", folder);
+
+      const res = await axios.post(
+        `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`,
+        payload,
+        {
         headers: { "Content-Type": "multipart/form-data" },
-      });
-      if (!res.data?.url) {
+        onUploadProgress: (event) => {
+          if (event.total) {
+            setVideoUploadProgress(Math.min(99, Math.round((event.loaded / event.total) * 100)));
+          }
+        },
+        },
+      );
+      if (!res.data?.secure_url) {
         throw new Error("Upload did not return a video URL");
       }
       setFormData((prev) => ({
         ...prev,
-        videos: [...(prev.videos || []), res.data.url],
+        videos: [...(prev.videos || []), res.data.secure_url],
+        videoThumbnailTimes: [...(prev.videoThumbnailTimes || []), 0],
       }));
+      setVideoUploadProgress(100);
       toast.success("Video uploaded");
     } catch (error: any) {
       toast.error(error.response?.data?.error || "Failed to upload video");
     } finally {
       setIsUploadingVideo(false);
+      setTimeout(() => setVideoUploadProgress(0), 500);
     }
   };
 
@@ -1415,6 +1450,7 @@ export default function AdminProductsPage() {
                     <span className="md:col-span-3 px-3 py-2 border border-gray-100 rounded-lg text-xs text-gray-500 bg-gray-50">Original: {formData.price !== "" && offer.packQuantity !== "" ? formatPrice((Number(formData.originalPrice) || Number(formData.price)) * Number(offer.packQuantity)) : "Auto calculated"}</span>
                     <label className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-700"><input type="checkbox" checked={offer.freeShipping} onChange={(e) => handleOfferChange(idx, "freeShipping", e.target.checked)} /> Free shipping</label>
                     <label className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-700"><input type="checkbox" checked={offer.isPopular} onChange={(e) => handleOfferChange(idx, "isPopular", e.target.checked)} /> Popular</label>
+                    <label className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-700"><input type="checkbox" checked={offer.isBestValue} onChange={(e) => handleOfferChange(idx, "isBestValue", e.target.checked)} /> Best value</label>
                     <button type="button" onClick={() => handleRemoveOfferRow(idx)} className="text-gray-400 hover:text-rose-600 p-1 justify-self-end" title="Remove Offer"><FiX size={16} /></button>
                   </div>
                 ))}
@@ -1702,6 +1738,7 @@ export default function AdminProductsPage() {
                         setFormData((prev) => ({
                           ...prev,
                           videos: [...(prev.videos || []), ""],
+                          videoThumbnailTimes: [...(prev.videoThumbnailTimes || []), 0],
                         }))
                       }
                       className="inline-flex items-center gap-1.5 rounded-full bg-[#B9853A] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#9a6d2f] cursor-pointer"
@@ -1727,10 +1764,43 @@ export default function AdminProductsPage() {
                   </div>
                 </div>
 
+                {isUploadingVideo && (
+                  <div className="space-y-1.5 rounded-lg border border-[#EADBCC] bg-[#FAF6F0] px-3 py-2">
+                    <div className="flex items-center justify-between text-xs font-semibold text-stone-700">
+                      <span>Uploading video...</span>
+                      <span>{videoUploadProgress}%</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-stone-200">
+                      <div
+                        className="h-full rounded-full bg-[#E8662D] transition-[width] duration-200"
+                        style={{ width: `${videoUploadProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {(formData.videos || []).length > 0 && (
                   <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-4">
                     {formData.videos.map((videoUrl, index) => (
-                      <div key={index} className="flex items-center gap-2">
+                      <div key={index} className="flex flex-wrap items-center gap-2">
+                        {videoUrl.trim() && (
+                          <video
+                            key={`${videoUrl}-${formData.videoThumbnailTimes[index] ?? 0}`}
+                            src={videoUrl}
+                            muted
+                            playsInline
+                            preload="metadata"
+                            onLoadedMetadata={(event) => {
+                              const requestedTime = Number(formData.videoThumbnailTimes[index]) || 0;
+                              event.currentTarget.currentTime = Math.max(
+                                0,
+                                Math.min(requestedTime, event.currentTarget.duration || requestedTime),
+                              );
+                            }}
+                            className="h-16 w-12 shrink-0 rounded-md bg-black object-cover"
+                            aria-label={`Video ${index + 1} thumbnail preview`}
+                          />
+                        )}
                         <input
                           type="url"
                           value={videoUrl}
@@ -1743,7 +1813,29 @@ export default function AdminProductsPage() {
                             }))
                           }
                           placeholder="https://res.cloudinary.com/.../video/upload/..."
-                          className="min-w-0 flex-1 border-b border-gray-300 bg-transparent px-0 py-2 text-sm font-light text-gray-800 focus:border-black focus:outline-none"
+                          className="min-w-45 flex-1 border-b border-gray-300 bg-transparent px-0 py-2 text-sm font-light text-gray-800 focus:border-black focus:outline-none"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          value={formData.videoThumbnailTimes[index] ?? 0}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              videoThumbnailTimes: (prev.videoThumbnailTimes || []).map(
+                                (time, timeIndex) =>
+                                  timeIndex === index
+                                    ? e.target.value === ""
+                                      ? ""
+                                      : Number(e.target.value)
+                                    : time,
+                              ),
+                            }))
+                          }
+                          placeholder="Thumbnail sec"
+                          title="Thumbnail time in seconds"
+                          className="w-28 border-b border-gray-300 bg-transparent px-0 py-2 text-xs text-gray-800 focus:border-black focus:outline-none"
                         />
                         <button
                           type="button"
@@ -1752,6 +1844,9 @@ export default function AdminProductsPage() {
                               ...prev,
                               videos: (prev.videos || []).filter(
                                 (_, videoIndex) => videoIndex !== index,
+                              ),
+                              videoThumbnailTimes: (prev.videoThumbnailTimes || []).filter(
+                                (_, timeIndex) => timeIndex !== index,
                               ),
                             }))
                           }
