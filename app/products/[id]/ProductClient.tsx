@@ -1018,7 +1018,7 @@ export default function ProductClient({
               <div className="w-full space-y-2.5 pt-2">
                 <div className="flex items-center gap-3">
                   <span className="h-px flex-1 bg-stone-200" />
-                  <h2 className="whitespace-nowrap rounded-full border border-black bg-black px-3 py-1 text-base font-black uppercase tracking-wider !text-white shadow-sm sm:text-lg">
+                  <h2 className="whitespace-nowrap px-3 py-1 text-base font-black uppercase tracking-wider text-stone-900 sm:text-lg">
                     Buy More, Save More
                   </h2>
                   <span className="h-px flex-1 bg-stone-200" />
@@ -1104,7 +1104,7 @@ export default function ProductClient({
                             {/* Save % badge */}
                             {savePercent > 0 && (
                               <span
-                                className="inline-flex items-center rounded-full border border-black bg-black px-2.5 py-0.5 text-[11px] font-extrabold tracking-tight text-white shadow-xs"
+                                className="inline-flex items-center rounded-full border border-black bg-transparent px-2.5 py-0.5 text-[11px] font-extrabold tracking-tight text-stone-900"
                                 style={{
                                   fontFamily: "var(--font-syne), 'Syne', sans-serif",
                                   fontStyle: "italic",
