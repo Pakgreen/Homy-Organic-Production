@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import Link from "next/link";
-import { formatPrice, formatDate } from "@/lib/utils";
+import { formatPrice, formatPakistanDateTime } from "@/lib/utils";
 import { ORDER_STATUS_COLORS, ORDER_STATUS_LABELS } from "@/lib/constants";
 
 export default function OrdersPage() {
@@ -83,7 +83,7 @@ export default function OrdersPage() {
                     </h2>
                   </Link>
                   <p className="text-sm text-gray-500 mb-3">
-                    Placed on {formatDate(order.createdAt)}
+                    Placed on {formatPakistanDateTime(order.createdAt)}
                   </p>
                   <div className="flex items-center space-x-4 text-sm font-medium">
                     <span className="text-gray-600">

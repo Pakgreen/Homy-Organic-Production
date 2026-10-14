@@ -59,6 +59,20 @@ export function formatDate(date: Date | string): string {
   }).format(new Date(date));
 }
 
+export function formatPakistanDateTime(date: Date | string): string {
+  return new Intl.DateTimeFormat("en-PK", {
+    timeZone: "Asia/Karachi",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+    timeZoneName: "short",
+  }).format(new Date(date));
+}
+
 export function truncateText(text: string, length: number): string {
   if (text.length <= length) return text;
   return text.substring(0, length) + "...";

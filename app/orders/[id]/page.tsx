@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import axios from "axios";
-import { formatPrice, formatDate } from "@/lib/utils";
+import { formatPrice, formatPakistanDateTime } from "@/lib/utils";
 import { ORDER_STATUS_COLORS, ORDER_STATUS_LABELS } from "@/lib/constants";
 import Link from "next/link";
 
@@ -102,7 +102,7 @@ export default function OrderDetailPage() {
             Order Details
           </h1>
           <p className="text-gray-500 mt-2 font-medium">
-            Placed on {formatDate(order.createdAt)}
+            Placed on {formatPakistanDateTime(order.createdAt)}
           </p>
         </div>
         <span

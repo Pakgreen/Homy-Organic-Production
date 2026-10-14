@@ -19,7 +19,7 @@ import {
   FiFileText,
   FiMessageSquare,
 } from "react-icons/fi";
-import { formatPrice, formatDate } from "@/lib/utils";
+import { formatPrice, formatPakistanDateTime } from "@/lib/utils";
 import { ORDER_STATUS_COLORS, ORDER_STATUS_LABELS } from "@/lib/constants";
 import Link from "next/link";
 import { canAccessAdminPanel } from "@/lib/rolePermissions";
@@ -281,7 +281,7 @@ export default function AdminDashboard() {
                 <tr key={order._id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/60 transition-colors">
                   <td className="px-5 py-4 font-mono text-gray-400 text-xs">#{order._id.slice(-8)}</td>
                   <td className="px-5 py-4 text-gray-800 text-sm font-medium">{order.user?.name || "Guest"}</td>
-                  <td className="px-5 py-4 text-gray-400 text-xs whitespace-nowrap">{formatDate(order.createdAt)}</td>
+                  <td className="px-5 py-4 text-gray-400 text-xs whitespace-nowrap">{formatPakistanDateTime(order.createdAt)}</td>
                   <td className="px-5 py-4 text-gray-900 text-sm font-semibold">{formatPrice(order.totalPrice)}</td>
                   <td className="px-5 py-4">
                     <span className={`px-2.5 py-1 inline-flex text-[10px] uppercase tracking-wide font-semibold rounded-full border ${ORDER_STATUS_COLORS[order.status as keyof typeof ORDER_STATUS_COLORS] || "text-gray-600 border-gray-200 bg-gray-50"}`}>
@@ -312,7 +312,7 @@ export default function AdminDashboard() {
                   </span>
                 </div>
                 <p className="text-sm font-medium text-gray-800 truncate">{order.user?.name || "Guest"}</p>
-                <p className="text-xs text-gray-400">{formatDate(order.createdAt)}</p>
+                <p className="text-xs text-gray-400">{formatPakistanDateTime(order.createdAt)}</p>
               </div>
               <div className="text-right shrink-0">
                 <p className="text-sm font-semibold text-gray-900">{formatPrice(order.totalPrice)}</p>

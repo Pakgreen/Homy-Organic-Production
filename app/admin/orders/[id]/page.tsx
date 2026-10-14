@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import axios from "axios";
 import { toast } from "sonner";
-import { formatPrice, formatDate } from "@/lib/utils";
+import { formatPrice, formatPakistanDateTime } from "@/lib/utils";
 import {
   FiCopy,
   FiMessageCircle,
@@ -157,7 +157,7 @@ export default function AdminOrderDetailPage() {
             </span>
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            Placed on {formatDate(order.createdAt)}
+            Placed on {formatPakistanDateTime(order.createdAt)}
           </p>
         </div>
 

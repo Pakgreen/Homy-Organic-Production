@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import Link from "next/link";
-import { formatPrice, formatDate } from "@/lib/utils";
+import { formatPrice, formatPakistanDateTime } from "@/lib/utils";
 import { ORDER_STATUS_COLORS, ORDER_STATUS_LABELS } from "@/lib/constants";
 import { openOrderWhatsApp } from "@/lib/whatsapp";
 import CourierShippingSlip from "@/components/CourierShippingSlip";
@@ -192,7 +192,7 @@ export default function AdminOrdersPage() {
                       <p className="text-xs text-gray-400 mt-0.5 truncate max-w-[160px]">{order.user?.email || "—"}</p>
                     </td>
                     <td className="px-5 py-4 text-xs text-gray-400 whitespace-nowrap">
-                      {formatDate(order.createdAt)}
+                      {formatPakistanDateTime(order.createdAt)}
                     </td>
                     <td className="px-5 py-4 text-sm font-semibold text-gray-900">
                       {formatPrice(order.totalPrice)}
@@ -268,7 +268,7 @@ export default function AdminOrdersPage() {
                   <span className={`px-2.5 py-1 text-[10px] uppercase tracking-wide font-semibold rounded-full border ${order.isPaid ? "border-green-200 text-green-700 bg-green-50" : "border-amber-200 text-amber-700 bg-amber-50"}`}>
                     {order.isPaid ? "Paid" : "Pending"}
                   </span>
-                  <span className="text-xs text-gray-400 ml-auto">{formatDate(order.createdAt)}</span>
+                  <span className="text-xs text-gray-400 ml-auto">{formatPakistanDateTime(order.createdAt)}</span>
                 </div>
 
                 {/* Action */}

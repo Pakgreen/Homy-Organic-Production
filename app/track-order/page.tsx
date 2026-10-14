@@ -4,7 +4,7 @@ import { useState } from "react";
 import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
-import { formatPrice, formatDate } from "@/lib/utils";
+import { formatPrice, formatPakistanDateTime } from "@/lib/utils";
 import {
   FiTruck,
   FiSearch,
@@ -230,7 +230,7 @@ export default function TrackOrderPage() {
                         </button>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">
-                        Placed on {formatDate(order.createdAt)}
+                        Placed on {formatPakistanDateTime(order.createdAt)}
                       </p>
                     </div>
 

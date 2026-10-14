@@ -3,7 +3,11 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "sonner";
-import { formatPrice, formatDate } from "@/lib/utils";
+import {
+  formatPrice,
+  formatDate,
+  formatPakistanDateTime,
+} from "@/lib/utils";
 import {
   FiPrinter,
   FiX,
@@ -130,7 +134,7 @@ export default function AdminStatementModal({
         <tr>
           <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-family: monospace; color: #6b7280;">${idx + 1}</td>
           <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-family: monospace; font-weight: bold; color: #111827;">#${order._id.substring(0, 8)}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; white-space: nowrap; color: #374151;">${formatDate(order.createdAt)}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; white-space: nowrap; color: #374151;">${formatPakistanDateTime(order.createdAt)}</td>
           <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">
             <div style="font-weight: bold; color: #111827;">${order.shippingAddress?.fullName || order.user?.name || "Guest"}</div>
             <div style="font-size: 11px; color: #6b7280; font-family: monospace;">${order.shippingAddress?.phone || "N/A"}</div>
@@ -531,7 +535,7 @@ export default function AdminStatementModal({
                               #{order._id.substring(0, 8)}
                             </td>
                             <td className="p-3 text-gray-600 whitespace-nowrap align-top">
-                              {formatDate(order.createdAt)}
+                              {formatPakistanDateTime(order.createdAt)}
                             </td>
                             <td className="p-3 align-top">
                               <p className="font-bold text-gray-900">
@@ -628,7 +632,7 @@ export default function AdminStatementModal({
                   </span>
                 </div>
                 <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">
-                  Placed on {formatDate(currentOrder.createdAt)}
+                  Placed on {formatPakistanDateTime(currentOrder.createdAt)}
                 </p>
               </div>
 

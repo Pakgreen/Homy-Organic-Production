@@ -272,6 +272,8 @@ export async function POST(req: NextRequest) {
         : undefined;
 
     const order = await Order.create({
+      // MongoDB stores this server-generated instant in UTC; clients cannot spoof it.
+      createdAt: new Date(),
       user: validUserId,
       contactEmail: recipientEmail,
       orderItems: normalizedOrderItems,

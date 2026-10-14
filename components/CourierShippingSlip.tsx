@@ -100,7 +100,17 @@ export default function CourierShippingSlip({
                 #{shortId}
               </span>
               <p className="text-[10px] text-gray-400 mt-1">
-                {new Date(order.createdAt || Date.now()).toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric" })}
+                {new Intl.DateTimeFormat("en-PK", {
+                  timeZone: "Asia/Karachi",
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                  hour12: true,
+                  timeZoneName: "short",
+                }).format(new Date(order.createdAt || Date.now()))}
               </p>
             </div>
           </div>
